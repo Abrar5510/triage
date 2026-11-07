@@ -129,6 +129,7 @@ main { padding-top: 40px; padding-bottom: 64px; display: flex; flex-direction: c
 .hint { color: var(--dim); font-size: 13px; }
 
 /* report */
+#panel { display: flex; flex-direction: column; gap: 24px; }
 .report-head { display: flex; flex-direction: column; gap: 8px; }
 .back { color: var(--muted); text-decoration: none; font-size: 14px; width: fit-content; }
 .back:hover { color: var(--text); }
@@ -209,6 +210,42 @@ details summary:hover { color: var(--text); }
 .policy b { color: var(--danger); text-transform: uppercase; font-size: 11px; letter-spacing: .04em; margin-right: 4px; }
 .raw summary { margin-top: 0; }
 
+/* loading state */
+.busy { opacity: .7; cursor: progress; pointer-events: none; }
+.sample.busy { border-color: var(--ok); }
+kbd { font: 11px var(--mono); border: 1px solid var(--line-2); border-bottom-width: 2px; border-radius: 4px; padding: 0 4px; margin: 0 1px; color: var(--muted); }
+
+/* inference status */
+.infer { margin: -20px 0 0; font-size: 13px; color: var(--dim); display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.infer b { color: var(--muted); font-weight: 500; }
+.infer .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--ok); box-shadow: 0 0 0 3px var(--ok-bg); }
+.infer-dev .dot { background: var(--info); box-shadow: 0 0 0 3px var(--info-bg); }
+.infer-missing .dot { background: var(--warn); box-shadow: 0 0 0 3px var(--warn-bg); }
+.infer-missing { color: var(--warn); }
+
+/* pipeline stepper */
+.stepper { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(7, 1fr); gap: 0; counter-reset: s; }
+.stepper li { position: relative; display: flex; flex-direction: column; align-items: center; gap: 6px; text-align: center; padding: 0 4px; }
+.stepper li::before { content: ""; position: absolute; top: 14px; left: calc(-50% + 18px); right: calc(50% + 18px); height: 2px; background: var(--line); }
+.stepper li:first-child::before { display: none; }
+.st-dot { width: 30px; height: 30px; border-radius: 50%; display: grid; place-items: center; font: 600 12px var(--mono); border: 2px solid var(--line-2); color: var(--dim); background: var(--bg); position: relative; z-index: 1; }
+.st-label { font-size: 12.5px; font-weight: 500; color: var(--dim); }
+.st-detail { font: 11px var(--mono); color: var(--dim); margin-top: -4px; }
+.st-done .st-dot { border-color: var(--ok); background: var(--ok); color: #04130c; }
+.st-done .st-label { color: var(--text); }
+.st-done::before, .st-warn::before, .st-danger::before, .st-fail::before, .st-active::before { background: var(--ok) !important; opacity: .5; }
+.st-warn .st-dot { border-color: var(--warn); color: var(--warn); }
+.st-warn .st-label { color: var(--warn); }
+.st-fail .st-dot { border-color: var(--muted); background: var(--muted); color: var(--bg); }
+.st-fail .st-label { color: var(--text); }
+.st-danger .st-dot { border-color: var(--danger); background: var(--danger); color: #1a0306; box-shadow: 0 0 0 4px var(--danger-bg); }
+.st-danger .st-label { color: var(--danger); }
+.st-skip .st-dot { border-style: dashed; }
+.st-skip .st-label { color: var(--dim); text-decoration: line-through; text-decoration-color: var(--line-2); }
+.st-active .st-dot { border-color: var(--info); color: var(--info); animation: ring 1.4s infinite; }
+.st-active .st-label { color: var(--info); }
+@keyframes ring { 0% { box-shadow: 0 0 0 0 rgba(122, 167, 255, .55); } 100% { box-shadow: 0 0 0 10px rgba(122, 167, 255, 0); } }
+
 @media (max-width: 900px) {
   .hero, .grid { grid-template-columns: 1fr; gap: 28px; }
   .controls, .stats { grid-template-columns: repeat(2, 1fr); }
@@ -216,6 +253,10 @@ details summary:hover { color: var(--text); }
   .diff { grid-template-columns: 1fr; } .diff-vs { padding: 2px 0; }
   .inbox a { grid-template-columns: 1fr; gap: 6px; }
   .runs { grid-template-columns: 1fr; }
+}
+@media (max-width: 700px) {
+  .stepper { grid-template-columns: repeat(4, 1fr); row-gap: 14px; }
+  .stepper li:nth-child(5)::before { display: none; }
 }
 @media (max-width: 520px) {
   .top, main, .foot { padding-left: 16px; padding-right: 16px; }

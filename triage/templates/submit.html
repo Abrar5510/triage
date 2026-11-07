@@ -13,8 +13,8 @@
 <form method="post" action="/submit" class="submit-form">
   <textarea name="text" rows="22" required maxlength="20000" placeholder="# Title&#10;&#10;Package: …&#10;Affected versions: …&#10;&#10;Steps to reproduce…" aria-label="Report text">{{ text }}</textarea>
   <div class="submit-row">
-    <span class="hint">Python / PyPI only · max 20,000 characters</span>
-    <button class="btn">Start triage →</button>
+    <span class="hint">Python / PyPI only · max 20,000 characters · <kbd>⌘</kbd><kbd>Enter</kbd> to submit</span>
+    <button class="btn"><span class="btn-label">Start triage →</span></button>
   </div>
 </form>
 {% endblock %}

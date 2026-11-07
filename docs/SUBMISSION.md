@@ -23,10 +23,13 @@ Vultr, Serverless Inference, AI Agents, Security, Sandboxing, gVisor, Docker, Fa
 - Live app: (fill after deploy)
 - Slides: docs/slides.pdf
 - Cover: docs/img/cover.png
+- Demo video: `docs/video/triage-demo.webm` (3:34, 1600×900, captioned, recorded from live runs). Upload to YouTube (unlisted) and paste the link. Not committed because of its size; regenerate with `node docs/video/record.mjs`.
 
 ---
 
 # Demo video script (about 3 minutes)
+
+The recorded video above follows this script with on-screen captions. Use it as the voiceover if you narrate over it.
 
 **0:00 – 0:20 · Problem.** Slide 2. "Security teams read every vulnerability report, because one might be real. AI made fake ones free to write. And the PoC attached to each one is untrusted code from a stranger."
 

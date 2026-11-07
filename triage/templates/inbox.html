@@ -29,6 +29,11 @@
   <div><b>{{ config.LIMIT_CPUS }} CPU · {{ config.LIMIT_MEMORY }}</b><span>{{ config.LIMIT_PIDS }} pids · {{ config.LIMIT_SECONDS }}s cap</span></div>
   <div><b>Destroyed</b><span>after every run</span></div>
 </section>
+<p class="infer infer-{{ inference[1] }}">
+  <span class="dot" aria-hidden="true"></span>
+  Agent model calls: <b>{{ inference[0] }}</b>
+  {% if inference[1] == 'missing' %}· no API key configured, demo runs will end Inconclusive{% else %}· {{ config.MODEL_SMART }}{% endif %}
+</p>
 
 <section class="stats">
   <div class="stat"><b>{{ stats.total }}</b><span>reports triaged</span></div>
@@ -59,4 +64,7 @@
   <div class="empty">No reports yet. Run one of the demo reports above, or <a href="/submit">paste your own</a>.</div>
   {% endif %}
 </section>
+{% endblock %}
+{% block scripts %}
+{% if live %}<script>setTimeout(() => location.reload(), 3000);</script>{% endif %}
 {% endblock %}

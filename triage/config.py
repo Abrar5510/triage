@@ -17,6 +17,9 @@ _load_dotenv()
 
 INFERENCE_URL = os.getenv("VULTR_INFERENCE_URL", "https://api.vultrinference.com/v1")
 INFERENCE_KEY = os.getenv("VULTR_INFERENCE_API_KEY", "")
+# Extra JSON merged into every chat request, for provider quirks (e.g. turning off "thinking" on a local model).
+INFERENCE_EXTRA = os.getenv("TRIAGE_INFERENCE_EXTRA", "")
+IS_VULTR = "vultrinference.com" in INFERENCE_URL
 MODEL_FAST = os.getenv("TRIAGE_MODEL_FAST", "glm-5.3-flash")      # intake parsing, claim extraction
 MODEL_SMART = os.getenv("TRIAGE_MODEL_SMART", "glm-5.3")          # PoC writing, retries, reviewer note
 MODEL_SAFETY = os.getenv("TRIAGE_MODEL_SAFETY", "nemotron-3.5-content-safety")  # prompt-injection screen

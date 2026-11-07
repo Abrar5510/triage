@@ -24,9 +24,28 @@
 </header>
 <main>{% block main %}{% endblock %}</main>
 <footer class="foot">
-  Runs on <strong>Vultr Cloud Compute</strong> · agent calls on <strong>Vultr Serverless Inference</strong> ·
+  Runs on <strong>Vultr Cloud Compute</strong> · agent calls on <strong>{{ inference_label()[0] }}</strong> ·
   every execution in a disposable sandbox · <a href="https://github.com/Abrar5510/triage">source</a>
 </footer>
+<script>
+// One click starts one triage: lock the button and show progress while the server queues it.
+document.addEventListener("submit", e => {
+  const b = e.target.querySelector("button");
+  if (!b) return;
+  if (b.dataset.busy) return e.preventDefault();
+  b.dataset.busy = "1"; b.classList.add("busy"); b.setAttribute("aria-busy", "true");
+  const go = b.querySelector(".sample-go, .btn-label");
+  if (go) go.textContent = go.classList.contains("btn-label") ? "Starting triage…" : "…";
+});
+// Back/forward cache restores pages as they were left: unlock buttons.
+window.addEventListener("pageshow", () => document.querySelectorAll("button[data-busy]").forEach(b => {
+  delete b.dataset.busy; b.classList.remove("busy"); b.removeAttribute("aria-busy");
+}));
+// Cmd/Ctrl+Enter submits from a textarea.
+document.addEventListener("keydown", e => {
+  if (e.key === "Enter" && (e.metaKey || e.ctrlKey) && e.target.form) e.target.form.requestSubmit();
+});
+</script>
 {% block scripts %}{% endblock %}
 </body>
 </html>

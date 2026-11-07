@@ -1,6 +1,8 @@
 """Triage web app: inbox, submit, live report detail. Run: uvicorn triage.app:app"""
 import asyncio
 import json
+from datetime import datetime
+from urllib.parse import urlparse
 from contextlib import asynccontextmanager
 from pathlib import Path
 
@@ -36,6 +38,59 @@ def sample_text(key):
     return (HERE / "samples" / SAMPLES[key][0]).read_text()
 
 
+def inference_label():
+    host = urlparse(config.INFERENCE_URL).hostname or "?"
+    if config.IS_VULTR:
+        return ("Vultr Serverless Inference", "ok" if config.INFERENCE_KEY else "missing")
+    return (f"{host} (dev stand-in)", "dev")
+
+
+STEPS = [("intake", "Intake"), ("extract", "Extract"), ("ground", "Ground"), ("poc", "Submitted PoC"),
+         ("reproduce", "Reproduce"), ("control", "Control"), ("verdict", "Verdict")]
+
+
+def steps(r):
+    """Per-stage state for the stepper: done, warn, fail, danger, skip, active or todo."""
+    runs, g, running = r["runs"], r["grounding"], r["status"] != "done"
+    sub = [x for x in runs if x["kind"] == "submitted"]
+    vul = [x for x in runs if x["kind"] == "vulnerable"]
+    pat = [x for x in runs if x["kind"] == "patched"]
+    hit = any(x["result"] == "VULNERABLE" for x in vul)
+    state = {
+        "intake": r["intake"] and ("warn" if r["intake"].get("flagged") else "done"),
+        "extract": r["claims"] and "done",
+        "ground": g and ("done" if g["found"] else "fail"),
+        "poc": ("danger" if sub[0]["events"] else "done") if sub else
+               ("skip" if r["claims"] and not r["claims"].get("poc") and g else None),
+        "reproduce": vul and ("done" if hit else None if running else "warn"),
+        "control": pat and ("done" if pat[0]["result"] == "NOT_VULNERABLE" else "warn"),
+        "verdict": not running and "done",
+    }
+    out, active = [], running
+    for key, label in STEPS:
+        st = state[key] or ("skip" if not running else "active" if active else "todo")
+        if st == "active":
+            active = False
+        detail = f"{len(vul)} attempt{'s' * (len(vul) != 1)}" if key == "reproduce" and vul else ""
+        out.append({"key": key, "label": label, "state": st, "detail": detail})
+    return out
+
+
+def elapsed(r):
+    try:
+        end = datetime.fromisoformat(r["finished_at"]) if r["finished_at"] else datetime.utcnow()
+        return f"{(end - datetime.fromisoformat(r['created_at'])).total_seconds():.0f}s"
+    except (TypeError, ValueError):
+        return ""
+
+
+templates.env.globals["inference_label"] = inference_label
+
+
+def report_ctx(r):
+    return {"r": r, "config": config, "steps": steps(r), "elapsed": elapsed(r)}
+
+
 def stats():
     r = db.rows("SELECT verdict, COUNT(*) n FROM reports WHERE status='done' GROUP BY verdict")
     s = {row["verdict"]: row["n"] for row in r}
@@ -49,7 +104,8 @@ def inbox(request: Request):
     reports = db.rows(f"SELECT id, title, status, verdict, confidence, created_at FROM reports "
                       f"ORDER BY status='done', {VERDICT_ORDER}, id DESC LIMIT 100")
     return templates.TemplateResponse(request, "inbox.html", {
-        "reports": reports, "stats": stats(), "samples": SAMPLES, "runtime": sandbox.runtime(), "config": config})
+        "reports": reports, "stats": stats(), "samples": SAMPLES, "runtime": sandbox.runtime(), "config": config,
+        "inference": inference_label(), "live": any(r["status"] != "done" for r in reports)})
 
 
 @app.get("/submit", response_class=HTMLResponse)
@@ -87,7 +143,7 @@ def report_page(request: Request, rid: int):
     r = db.report(rid)
     if not r:
         raise HTTPException(404)
-    return templates.TemplateResponse(request, "report.html", {"r": r, "config": config})
+    return templates.TemplateResponse(request, "report.html", report_ctx(r))
 
 
 @app.get("/reports/{rid}/panel", response_class=HTMLResponse)
@@ -96,7 +152,7 @@ def report_panel(request: Request, rid: int):
     r = db.report(rid)
     if not r:
         raise HTTPException(404)
-    return templates.TemplateResponse(request, "_panel.html", {"r": r, "config": config})
+    return templates.TemplateResponse(request, "_panel.html", report_ctx(r))
 
 
 # ---------- JSON API ----------
@@ -140,4 +196,6 @@ async def api_events(rid: int, request: Request, after: int = 0):
 
 @app.get("/healthz")
 def healthz():
-    return {"ok": True, "runtime": sandbox.runtime(), "inference_key": bool(config.INFERENCE_KEY)}
+    return {"ok": True, "runtime": sandbox.runtime(), "inference": inference_label()[0],
+            "inference_key": bool(config.INFERENCE_KEY),
+            "models": {"fast": config.MODEL_FAST, "smart": config.MODEL_SMART, "safety": config.MODEL_SAFETY}}

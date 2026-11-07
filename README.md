@@ -8,7 +8,13 @@ Triage is an AI agent for security teams and open-source maintainers. It reads a
 
 **Live app:** _set after deploy_ · **Demo video:** _set after upload_ · **Slides:** [docs/slides.pdf](docs/slides.pdf)
 
-![Triage](docs/img/cover.png)
+![Triage report view: a hostile proof of concept contained](docs/img/hostile.png)
+
+<table><tr>
+<td><a href="docs/img/reproduced.png"><img src="docs/img/reproduced.png" alt="Reproduced: same test, vulnerable vs patched"></a><br><sub><b>Reproduced:</b> same test, two fresh sandboxes, vulnerable vs patched</sub></td>
+<td><a href="docs/img/rejected.png"><img src="docs/img/rejected.png" alt="Rejected at grounding"></a><br><sub><b>Rejected:</b> the function never existed, nothing executed</sub></td>
+<td><a href="docs/img/home.png"><img src="docs/img/home.png" alt="Ranked inbox"></a><br><sub><b>Inbox:</b> ranked for the reviewer, one-click demos</sub></td>
+</tr></table>
 
 ---
 
@@ -39,6 +45,10 @@ Verdict ◄── Rules over evidence ◄── Control run on PATCHED ◄──
 | 5 | **Reproduce** | The agent writes its own minimal test, runs it on the vulnerable version, reads stdout/stderr, and retries with the output fed back (up to 3 attempts). | LLM (smart model) |
 | 6 | **Control** | Runs the identical test against the patched version in another fresh sandbox. | Sandbox |
 | 7 | **Decide** | Fixed rules turn evidence into a verdict. The model only writes the reviewer note. | **Rules, not the model** |
+
+The model writes only a `check() -> bool` function. The orchestrator appends the code that calls it and prints the single `TRIAGE_RESULT` line, so a garbled model reply can break a test (and trigger a retry) but can never forge a result.
+
+The report page shows all of this live: a stage stepper, a streaming timeline (Server-Sent Events), the vulnerable-vs-patched result side by side, and every run's script, stdout, stderr, exit code, memory and policy events.
 
 | Verdict | Rule |
 |---|---|
@@ -136,6 +146,28 @@ cp .env.example .env            # add VULTR_INFERENCE_API_KEY
 
 Without gVisor installed, the sandbox uses Docker's default `runc` with all the same flags; the UI and `/healthz` show which runtime is active.
 
+### Any OpenAI-compatible model works for development
+
+Production uses Vultr Serverless Inference. For local work, point the same client at any OpenAI-compatible server, for example LM Studio:
+
+```bash
+VULTR_INFERENCE_URL=http://localhost:1234/v1
+TRIAGE_MODEL_FAST=qwen/qwen3.5-9b
+TRIAGE_MODEL_SMART=qwen/qwen3.5-9b
+TRIAGE_MODEL_SAFETY=qwen/qwen3.5-9b
+TRIAGE_INFERENCE_EXTRA={"chat_template_kwargs":{"enable_thinking":false}}
+```
+
+The UI labels a non-Vultr endpoint as a "dev stand-in" so it is never mistaken for production. Even a 9B local model gets all three demo verdicts right; report A reproduced on the first attempt in 3 out of 3 consecutive runs.
+
+### Re-record the demo video and screenshots
+
+```bash
+node docs/video/record.mjs http://localhost:8000
+```
+
+Drives the three demo reports live with on-screen captions and writes `docs/video/triage-demo.webm` and `docs/img/*.png` (needs Node Playwright; `PLAYWRIGHT_MODULE` points at a specific install).
+
 ### Tests
 
 ```bash
@@ -183,6 +215,10 @@ Runs all three demo reports end to end against the real sandbox, real PyPI downl
 | Bug bounty platforms | Automated first-pass triage at intake, before a paid analyst looks. |
 
 A fabricated report is rejected in seconds, with nothing executed. A real one arrives with the exact test that proves it and the proof that the patch fixes it.
+
+## Honest note on this build
+
+The Vultr inference coupon was not available to us during the build window, so the screenshots and the demo recording in this repo were made on a local machine with `qwen/qwen3.5-9b` (LM Studio) standing in for Vultr Serverless Inference through the same OpenAI-compatible client. The sandbox, PyPI fetches, grounding and verdict rules are identical. On a Vultr VM with `VULTR_INFERENCE_API_KEY` set, every call goes to `api.vultrinference.com`, and the UI shows which provider served each deployment.
 
 ## License
 

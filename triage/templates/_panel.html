@@ -8,8 +8,18 @@
     {% include "_badge.html" %}
     <h1 class="h1-sm">{{ r.title or 'Untitled report' }}</h1>
   </div>
-  <p class="report-meta">Report #{{ r.id }} · received {{ r.created_at }} UTC{% if r.finished_at %} · decided {{ r.finished_at[11:] }}{% endif %}</p>
+  <p class="report-meta">Report #{{ r.id }} · received {{ r.created_at }} UTC · {{ 'decided in' if r.finished_at else 'running for' }} {{ elapsed }} · {{ r.runs|length }} sandbox{{ 'es' if r.runs|length != 1 }} used and destroyed</p>
 </div>
+
+<ol class="stepper" aria-label="Pipeline progress">
+  {% for s in steps %}
+  <li class="st-{{ s.state }}" {% if s.state == 'active' %}aria-current="step"{% endif %}>
+    <span class="st-dot" aria-hidden="true">{{ {'done':'✓','fail':'✗','danger':'!','warn':'!','skip':'–'}.get(s.state, loop.index) }}</span>
+    <span class="st-label">{{ s.label }}</span>
+    {% if s.detail %}<span class="st-detail">{{ s.detail }}</span>{% endif %}
+  </li>
+  {% endfor %}
+</ol>
 
 {% if r.status == 'done' %}
 <section class="verdict v-{{ r.verdict|lower }}">
@@ -127,7 +137,7 @@
       {% endif %}
       <details data-key="script-{{ run.id }}"><summary>Script</summary><pre>{{ run.script }}</pre></details>
       <details data-key="out-{{ run.id }}" {{ 'open' if loop.last }}><summary>stdout</summary><pre>{{ run.stdout or '(empty)' }}</pre></details>
-      {% if run.stderr %}<details data-key="err-{{ run.id }}"><summary>stderr</summary><pre>{{ run.stderr }}</pre></details>{% endif %}
+      {% if run.stderr %}<details data-key="err-{{ run.id }}" {{ 'open' if not run.stdout }}><summary>stderr</summary><pre>{{ run.stderr }}</pre></details>{% endif %}
     </article>
   {% endfor %}
   </div>

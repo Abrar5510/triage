@@ -19,16 +19,18 @@ from triage import db, llm, pipeline  # noqa: E402
 SAMPLES = ROOT / "triage" / "samples"
 
 REPRO = """import sqlparse
-try:
-    sqlparse.parse('[' * 10000 + ']' * 10000)
-    print('parsed fine')
-    print('TRIAGE_RESULT: NOT_VULNERABLE')
-except RecursionError:
-    print('RecursionError raised')
-    print('TRIAGE_RESULT: VULNERABLE')
-except Exception as e:
-    print('handled:', type(e).__name__)
-    print('TRIAGE_RESULT: NOT_VULNERABLE')
+
+def check():
+    try:
+        sqlparse.parse('[' * 10000 + ']' * 10000)
+        print('parsed fine')
+        return False
+    except RecursionError:
+        print('RecursionError raised')
+        return True
+    except Exception as e:
+        print('handled:', type(e).__name__)
+        return False
 """
 
 
