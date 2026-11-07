@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+{% block title %}Submit report · Triage{% endblock %}
+{% block main %}
+<div class="section-head">
+  <h1 class="h1-sm">Submit a vulnerability report</h1>
+  <p>Paste a report about a Python package on PyPI, exactly as it arrived. Any attached proof of concept runs only inside the sandbox.</p>
+</div>
+<div class="pick">
+  {% for key, s in samples.items() %}
+  <a href="/submit?sample={{ key }}" class="chip {{ 'on' if chosen == key }}">{{ s[1] }}</a>
+  {% endfor %}
+</div>
+<form method="post" action="/submit" class="submit-form">
+  <textarea name="text" rows="22" required maxlength="20000" placeholder="# Title&#10;&#10;Package: …&#10;Affected versions: …&#10;&#10;Steps to reproduce…" aria-label="Report text">{{ text }}</textarea>
+  <div class="submit-row">
+    <span class="hint">Python / PyPI only · max 20,000 characters</span>
+    <button class="btn">Start triage →</button>
+  </div>
+</form>
+{% endblock %}

@@ -142,11 +142,11 @@ Chosen in hour one and verified before anything else is built on top of them.
 
 ## 11. Submission checklist
 
-- [ ] Public GitHub repo, MIT license
-- [ ] README: Vultr services used, architecture, how the agent executes real work
+- [x] Public GitHub repo, MIT license
+- [x] README: Vultr services used, architecture, how the agent executes real work
 - [ ] App deployed on a Vultr VM, public URL
 - [ ] Demo video with the containment moment
-- [ ] Slide deck
-- [ ] Cover image
+- [x] Slide deck (docs/slides.pdf)
+- [x] Cover image (docs/img/cover.png)
 - [ ] Project title, short and long description, tags on lablab.ai
 - [ ] Optional: post on Vultr Community

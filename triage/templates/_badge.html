@@ -1,0 +1,2 @@
+{% set v = r.verdict if r.status == 'done' else r.status %}
+<span class="badge b-{{ (v or 'queued')|lower }}">{{ {'REPRODUCED':'Reproduced','NOT_REPRODUCED':'Not reproduced','HOSTILE':'Hostile','INCONCLUSIVE':'Inconclusive','running':'Running','queued':'Queued'}.get(v, v) }}</span>

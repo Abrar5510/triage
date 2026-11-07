@@ -1,0 +1,62 @@
+{% extends "base.html" %}
+{% block main %}
+<section class="hero">
+  <div class="hero-copy">
+    <p class="eyebrow">Vulnerability report triage agent</p>
+    <h1>Every report reproduced or rejected <em>before</em> a human reads it.</h1>
+    <p class="lede">Triage reads an incoming report, rebuilds the exact vulnerable library version in a disposable
+      sandbox, writes and runs a proof of concept, then runs it again on the patched version.
+      Reviewers get execution evidence instead of prose.</p>
+  </div>
+  <div class="try">
+    <p class="try-label">Run a demo report live</p>
+    {% for key, s in samples.items() %}
+    <form method="post" action="/run/{{ key }}">
+      <button class="sample sample-{{ key }}">
+        <span class="sample-tag">{{ s[1] }}</span>
+        <span class="sample-desc">{{ s[2] }}</span>
+        <span class="sample-go" aria-hidden="true">→</span>
+      </button>
+    </form>
+    {% endfor %}
+  </div>
+</section>
+
+<section class="controls" aria-label="Sandbox controls on every run">
+  <div><b>{{ 'gVisor' if runtime == 'runsc' else 'Hardened Docker' }}</b><span>isolation runtime</span></div>
+  <div><b>No network</b><span>no route out</span></div>
+  <div><b>No secrets</b><span>empty env + canary</span></div>
+  <div><b>{{ config.LIMIT_CPUS }} CPU · {{ config.LIMIT_MEMORY }}</b><span>{{ config.LIMIT_PIDS }} pids · {{ config.LIMIT_SECONDS }}s cap</span></div>
+  <div><b>Destroyed</b><span>after every run</span></div>
+</section>
+
+<section class="stats">
+  <div class="stat"><b>{{ stats.total }}</b><span>reports triaged</span></div>
+  <div class="stat s-ok"><b>{{ stats.get('REPRODUCED', 0) }}</b><span>reproduced</span></div>
+  <div class="stat s-muted"><b>{{ stats.get('NOT_REPRODUCED', 0) }}</b><span>rejected</span></div>
+  <div class="stat s-danger"><b>{{ stats.get('HOSTILE', 0) }}</b><span>hostile, contained</span></div>
+  <div class="stat"><b>{{ stats.runs }}</b><span>sandboxes destroyed</span></div>
+</section>
+
+<section>
+  <div class="section-head">
+    <h2>Inbox</h2>
+    <p>Ranked for the reviewer: reproduced first, then hostile, inconclusive, rejected.</p>
+  </div>
+  {% if reports %}
+  <ul class="inbox">
+    {% for r in reports %}
+    <li>
+      <a href="/reports/{{ r.id }}">
+        {% include "_badge.html" %}
+        <span class="inbox-title">{{ r.title or 'Untitled report' }}</span>
+        <span class="inbox-meta">{% if r.confidence is not none %}{{ (r.confidence * 100)|round|int }}% · {% endif %}#{{ r.id }} · {{ r.created_at[5:16] }} UTC</span>
+      </a>
+    </li>
+    {% endfor %}
+  </ul>
+  {% else %}
+  <div class="empty">No reports yet. Run one of the demo reports above, or <a href="/submit">paste your own</a>.</div>
+  {% endif %}
+</section>
+{% endblock %}

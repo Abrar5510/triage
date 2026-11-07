@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% block title %}#{{ r.id }} {{ r.title or 'Report' }} · Triage{% endblock %}
+{% block main %}
+<div id="panel" data-id="{{ r.id }}" data-live="{{ 'no' if r.status == 'done' else 'yes' }}">
+{% include "_panel.html" %}
+</div>
+{% endblock %}
+{% block scripts %}
+<script>
+(() => {
+  const panel = document.getElementById("panel");
+  if (panel.dataset.live !== "yes") return;
+  const id = panel.dataset.id;
+  let pending = false;
+  const refresh = async () => {
+    if (pending) return;
+    pending = true;
+    try {
+      const open = [...panel.querySelectorAll("details[open]")].map(d => d.dataset.key);
+      const html = await (await fetch(`/reports/${id}/panel`)).text();
+      panel.innerHTML = html;
+      open.forEach(k => { const d = panel.querySelector(`details[data-key="${k}"]`); if (d) d.open = true; });
+    } finally { pending = false; }
+  };
+  const es = new EventSource(`/api/reports/${id}/events`);
+  es.onmessage = refresh;
+  es.addEventListener("end", () => { es.close(); setTimeout(refresh, 300); });
+  es.onerror = () => { es.close(); setInterval(refresh, 2000); };  // fallback: polling
+})();
+</script>
+{% endblock %}

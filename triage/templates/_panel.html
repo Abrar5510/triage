@@ -1,0 +1,137 @@
+{% set c = r.claims or {} %}
+{% set test_runs = r.runs|selectattr('kind', 'equalto', 'vulnerable')|list %}
+{% set final_vuln = test_runs[-1] if test_runs else none %}
+{% set patched = (r.runs|selectattr('kind', 'equalto', 'patched')|list or [none])[0] %}
+<div class="report-head">
+  <a href="/" class="back">← Inbox</a>
+  <div class="report-title">
+    {% include "_badge.html" %}
+    <h1 class="h1-sm">{{ r.title or 'Untitled report' }}</h1>
+  </div>
+  <p class="report-meta">Report #{{ r.id }} · received {{ r.created_at }} UTC{% if r.finished_at %} · decided {{ r.finished_at[11:] }}{% endif %}</p>
+</div>
+
+{% if r.status == 'done' %}
+<section class="verdict v-{{ r.verdict|lower }}">
+  <div class="verdict-main">
+    <span class="verdict-label">Verdict</span>
+    <strong>{{ {'REPRODUCED':'Reproduced','NOT_REPRODUCED':'Not reproduced','HOSTILE':'Hostile: contained','INCONCLUSIVE':'Inconclusive'}[r.verdict] }}</strong>
+    {% if r.confidence is not none %}<span class="conf">{{ (r.confidence * 100)|round|int }}% confidence</span>{% endif %}
+  </div>
+  <p class="verdict-note">{{ r.explanation }}</p>
+  <p class="verdict-foot">Decided by fixed rules over sandbox evidence. A human makes the final call.</p>
+</section>
+{% else %}
+<section class="verdict v-running">
+  <div class="verdict-main"><span class="pulse" aria-hidden="true"></span><strong>{{ 'Triage running' if r.status == 'running' else 'Queued' }}</strong></div>
+  <p class="verdict-note">The agent is working. Evidence appears below as each sandbox finishes.</p>
+</section>
+{% endif %}
+
+{% if final_vuln and patched %}
+<section class="diff" aria-label="Differential result">
+  <div class="diff-side {{ 'hit' if final_vuln.result == 'VULNERABLE' }}">
+    <span>Vulnerable {{ c.package }} {{ final_vuln.version }}</span>
+    <b>{{ final_vuln.result or 'no result' }}</b>
+  </div>
+  <div class="diff-vs">same test<br>fresh sandbox</div>
+  <div class="diff-side {{ 'hit' if patched.result == 'VULNERABLE' else 'clean' }}">
+    <span>Patched {{ c.package }} {{ patched.version }}</span>
+    <b>{{ patched.result or 'no result' }}</b>
+  </div>
+</section>
+{% endif %}
+
+<div class="grid">
+  <section class="card timeline-card">
+    <h2>Agent timeline</h2>
+    <ol class="timeline">
+      {% for e in r.log %}
+      <li class="t-{{ e.level }}">
+        <span class="t-stage">{{ e.stage }}</span>
+        <span class="t-msg">{{ e.message }}</span>
+        <time>{{ e.created_at[11:] }}</time>
+      </li>
+      {% endfor %}
+      {% if r.status != 'done' %}<li class="t-wait"><span class="t-stage">…</span><span class="t-msg">working</span></li>{% endif %}
+    </ol>
+  </section>
+
+  <div class="side">
+    <section class="card">
+      <h2>Extracted claims</h2>
+      {% if r.claims %}
+      <dl class="kv">
+        <dt>Package</dt><dd><code>{{ c.package }}</code></dd>
+        <dt>Affected</dt><dd><code>{{ c.affected_version }}</code></dd>
+        <dt>Patched</dt><dd><code>{{ c.patched_version or 'not stated' }}</code></dd>
+        <dt>Function</dt><dd><code>{{ c.function or 'not named' }}</code></dd>
+        <dt>Class</dt><dd>{{ c.vuln_class or '—' }}</dd>
+        <dt>Claim</dt><dd>{{ c.claimed_impact or '—' }}</dd>
+        <dt>PoC</dt><dd>{{ 'attached, runs sandboxed first' if c.poc else 'none attached' }}</dd>
+      </dl>
+      {% else %}<p class="muted">{{ 'Not reached.' if r.status == 'done' else 'Waiting for extraction…' }}</p>{% endif %}
+    </section>
+
+    <section class="card">
+      <h2>Grounding <span class="tag">deterministic, no model</span></h2>
+      {% if r.grounding %}
+        {% if r.grounding.found %}
+          <p class="g-ok">✓ Found in real source</p>
+          {% for loc in r.grounding.locations[:4] %}<code class="loc">{{ loc }}</code>{% endfor %}
+          {% if r.grounding.snippet %}<details data-key="snippet"><summary>Source</summary><pre>{{ r.grounding.snippet }}</pre></details>{% endif %}
+        {% else %}
+          <p class="g-bad">✗ {{ r.grounding.note or ('`' ~ (r.grounding.symbol or c.function) ~ '` does not exist in ' ~ c.package ~ ' ' ~ c.affected_version) }}</p>
+          <p class="muted">Rejected before anything ran.</p>
+        {% endif %}
+      {% else %}<p class="muted">{{ 'Not reached.' if r.status == 'done' else 'Pending…' }}</p>{% endif %}
+    </section>
+
+    {% if r.intake %}
+    <section class="card">
+      <h2>Intake screen</h2>
+      {% if r.intake.flagged %}
+        <p class="g-warn">⚠ Text aimed at manipulating the agent</p>
+        <p class="muted">Ignored. Report text is data; the model never controls sandbox settings or verdicts.</p>
+      {% else %}<p class="g-ok">✓ No injection attempt found</p>{% endif %}
+    </section>
+    {% endif %}
+  </div>
+</div>
+
+{% if r.runs %}
+<section>
+  <div class="section-head"><h2>Sandbox runs</h2><p>Each run is a new container, destroyed afterwards. Nothing persists between runs.</p></div>
+  <div class="runs">
+  {% for run in r.runs %}
+    <article class="run {{ 'run-danger' if run.events }} run-{{ run.kind }}">
+      <header>
+        <span class="run-kind">{{ {'submitted':'Submitted PoC (untrusted)','vulnerable':'Agent test · vulnerable','patched':'Control · patched'}[run.kind] }}</span>
+        <code>{{ c.package }} {{ run.version }}</code>
+        {% if run.kind == 'vulnerable' %}<span class="muted">attempt {{ run.attempt }}</span>{% endif %}
+        {% if run.result %}<span class="pill p-{{ run.result|lower }}">{{ run.result }}</span>{% endif %}
+      </header>
+      <dl class="metrics">
+        <div><dt>exit</dt><dd>{{ run.exit_code }}</dd></div>
+        <div><dt>wall</dt><dd>{{ run.wall_ms }} ms</dd></div>
+        <div><dt>peak mem</dt><dd>{{ run.peak_mem_mb or '—' }} MB</dd></div>
+        <div><dt>runtime</dt><dd>{{ 'gVisor' if run.runtime == 'runsc' else 'runc' }}</dd></div>
+        <div><dt>network</dt><dd>none</dd></div>
+        {% if run.kill_reason %}<div class="m-kill"><dt>killed</dt><dd>{{ run.kill_reason }}</dd></div>{% endif %}
+      </dl>
+      {% if run.events %}
+      <div class="policy">
+        <p class="policy-head">🚨 Contained: {{ run.events|length }} policy event{{ 's' if run.events|length > 1 }}</p>
+        <ul>{% for e in run.events %}<li><b>{{ e.kind.replace('_', ' ') }}</b> {{ e.detail }}</li>{% endfor %}</ul>
+      </div>
+      {% endif %}
+      <details data-key="script-{{ run.id }}"><summary>Script</summary><pre>{{ run.script }}</pre></details>
+      <details data-key="out-{{ run.id }}" {{ 'open' if loop.last }}><summary>stdout</summary><pre>{{ run.stdout or '(empty)' }}</pre></details>
+      {% if run.stderr %}<details data-key="err-{{ run.id }}"><summary>stderr</summary><pre>{{ run.stderr }}</pre></details>{% endif %}
+    </article>
+  {% endfor %}
+  </div>
+</section>
+{% endif %}
+
+<details class="card raw" data-key="raw"><summary>Original report</summary><pre>{{ r.raw_text }}</pre></details>

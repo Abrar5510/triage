@@ -1,0 +1,18 @@
+[Unit]
+Description=Triage: vulnerability report triage agent
+After=network-online.target docker.service
+Requires=docker.service
+
+[Service]
+User=triage
+WorkingDirectory=/opt/triage
+Environment=TRIAGE_CACHE=/home/triage/.cache/triage
+ExecStart=/opt/triage/.venv/bin/uvicorn triage.app:app --host 127.0.0.1 --port 8000 --proxy-headers
+Restart=always
+RestartSec=3
+NoNewPrivileges=true
+ProtectSystem=full
+PrivateTmp=true
+
+[Install]
+WantedBy=multi-user.target

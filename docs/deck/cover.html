@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Triage cover</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@500;600;700&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
+<style>
+* { box-sizing: border-box; }
+body { margin: 0; width: 1920px; height: 1080px; background: #0b0d10; color: #e7eaf0; font-family: "Inter Tight", sans-serif; overflow: hidden; position: relative; }
+.glow { position: absolute; inset: 0; background: radial-gradient(1100px 700px at 82% 18%, rgba(61,220,151,.16), transparent 60%), radial-gradient(900px 600px at 10% 100%, rgba(255,92,108,.10), transparent 60%); }
+.gridbg { position: absolute; inset: 0; background-image: linear-gradient(rgba(255,255,255,.035) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.035) 1px, transparent 1px); background-size: 64px 64px; mask-image: radial-gradient(ellipse at 70% 40%, #000 20%, transparent 75%); }
+.wrap { position: relative; padding: 130px 140px; height: 100%; display: grid; grid-template-columns: 1.1fr 1fr; gap: 80px; align-items: center; }
+.brand { display: flex; align-items: center; gap: 22px; font-size: 54px; font-weight: 700; letter-spacing: -.03em; margin-bottom: 52px; }
+h1 { font-size: 92px; line-height: 1.02; letter-spacing: -.045em; margin: 0; font-weight: 700; }
+h1 em { font-style: normal; color: #3ddc97; }
+.sub { margin-top: 40px; font: 500 26px "JetBrains Mono", monospace; color: #8b93a7; letter-spacing: .02em; }
+.cards { display: flex; flex-direction: column; gap: 22px; }
+.c { background: rgba(20,24,33,.92); border: 1px solid #222836; border-radius: 22px; padding: 30px 34px; display: grid; grid-template-columns: auto 1fr; gap: 26px; align-items: center; }
+.tag { font: 600 22px "JetBrains Mono", monospace; padding: 10px 16px; border-radius: 10px; text-transform: uppercase; letter-spacing: .04em; white-space: nowrap; }
+.c p { margin: 0; font-size: 27px; color: #b8bfcf; line-height: 1.35; }
+.ok { color: #3ddc97; background: rgba(61,220,151,.12); }
+.no { color: #8b93a7; background: rgba(139,147,167,.14); }
+.bad { color: #ff5c6c; background: rgba(255,92,108,.14); }
+.c.h { border-color: rgba(255,92,108,.55); box-shadow: 0 20px 70px -20px rgba(255,92,108,.45); }
+.foot { position: absolute; left: 140px; bottom: 70px; font: 500 22px "JetBrains Mono", monospace; color: #5e6679; letter-spacing: .08em; text-transform: uppercase; }
+</style>
+</head>
+<body>
+<div class="glow"></div><div class="gridbg"></div>
+<div class="wrap">
+  <div>
+    <div class="brand"><svg width="64" height="64" viewBox="0 0 24 24"><path d="M12 2 3 6v6c0 5 3.8 9.4 9 10 5.2-.6 9-5 9-10V6l-9-4Z" fill="none" stroke="#e7eaf0" stroke-width="1.6"/><path d="m8 12 3 3 5-6" fill="none" stroke="#3ddc97" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>Triage</div>
+    <h1>Every bug report reproduced or rejected <em>before</em> a human reads it.</h1>
+    <div class="sub">gVisor sandboxes · vulnerable vs patched · Vultr</div>
+  </div>
+  <div class="cards">
+    <div class="c"><span class="tag ok">Reproduced</span><p>Real CVE: vulnerable on 0.4.4, fixed on 0.5.0</p></div>
+    <div class="c"><span class="tag no">Rejected</span><p>AI-written "RCE" in a function that never existed</p></div>
+    <div class="c h"><span class="tag bad">Hostile</span><p>PoC tried to steal credentials. Contained.</p></div>
+  </div>
+</div>
+<div class="foot">Vultr Agent Rush · Blast Radius Zero</div>
+</body>
+</html>
