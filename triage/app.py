@@ -1,6 +1,7 @@
 """Triage web app: inbox, submit, live report detail. Run: uvicorn triage.app:app"""
 import asyncio
 import json
+import threading
 from datetime import datetime
 from urllib.parse import urlparse
 from contextlib import asynccontextmanager
@@ -12,6 +13,7 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 
 from . import config, db, pipeline, sandbox
+from .attacks import ATTACKS
 
 HERE = Path(__file__).parent
 SAMPLES = {
@@ -153,6 +155,46 @@ def report_panel(request: Request, rid: int):
     if not r:
         raise HTTPException(404)
     return templates.TemplateResponse(request, "_panel.html", report_ctx(r))
+
+
+# ---------- Break the sandbox ----------
+
+PLAYGROUND_SECONDS = 10
+_playground = threading.BoundedSemaphore(2)  # ponytail: 2 concurrent playground sandboxes per VM; a queue if traffic grows
+
+
+def _sandbox_page(request, code, chosen, run=None, error=None):
+    return templates.TemplateResponse(request, "sandbox.html", {
+        "attacks": ATTACKS, "code": code, "chosen": chosen, "run": run, "error": error,
+        "runtime": sandbox.runtime(), "config": config, "seconds": PLAYGROUND_SECONDS})
+
+
+@app.get("/sandbox", response_class=HTMLResponse)
+def sandbox_page(request: Request, attack: str = "steal", run: bool = False):
+    """`?attack=steal&run=1` is a shareable link that runs a preset (never arbitrary code) on open."""
+    attack = attack if attack in ATTACKS else "steal"
+    if run:
+        return _sandbox_exec(request, ATTACKS[attack][2], attack)
+    return _sandbox_page(request, ATTACKS[attack][2], attack)
+
+
+@app.post("/sandbox", response_class=HTMLResponse)
+def sandbox_run(request: Request, code: str = Form(...), attack: str = Form("")):
+    return _sandbox_exec(request, code[:config.MAX_REPORT_CHARS], attack)
+
+
+def _sandbox_exec(request, code, attack):
+    if not _playground.acquire(blocking=False):
+        return _sandbox_page(request, code, attack, error="Two sandboxes are already running. Try again in a few seconds.")
+    try:
+        empty = config.CACHE / "empty"
+        empty.mkdir(parents=True, exist_ok=True)
+        run = sandbox.run(code, empty, seconds=PLAYGROUND_SECONDS)
+    except Exception as e:
+        return _sandbox_page(request, code, attack, error=f"Sandbox failed to start: {e}")
+    finally:
+        _playground.release()
+    return _sandbox_page(request, code, attack, run=run)
 
 
 # ---------- JSON API ----------

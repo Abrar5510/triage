@@ -5,7 +5,8 @@
 - Every product screen is Triage's real markup and stylesheet (assets/app.css is a copy of triage/static/style.css), filled with the real data of runs #1–#3 from the local instance. Rows are a selection of the real timeline events, in order.
 - The left column carries the story in large type, while the panel on the right shows the evidence. UI is rendered at 1.6x zoom.
 - Honesty: the recorded runs used hardened Docker (runc) on a Mac, and the run card says `runc`. gVisor only appears as the deploy flag `--runtime runsc  # gVisor on the Vultr VM`. The Vultr lines describe the deployment target.
-- Length 110 s, 1920x1080, 30 fps.
+- Length 120 s, 1920x1080, 30 fps. A 10 s "Break the sandbox" scene (compositions/break.html) sits at 90 s, built from the real /sandbox markup and real run metrics (264 ms canary catch, 127-process fork cap, 512 MB OOM kill).
+- Narration: 21 lines, Kokoro af_heart at 1.05x, generated locally, loudness-normalized to -16 LUFS (assets/vo/, script in vo.tsv). The riser and glitch SFX are ducked under the voice.
 
 ## Measured vs looked at
 - `hyperframes check`: no errors. Inspected review sheets for all 8 scenes and all 7 seams, plus spot frames at 1.2, 5.6, 7.9, 11.8, 13.2, 13.95, 23.6, 41.8, 51.5, 59.5, 73.6, 79.5, 87, 93.2, 99.5 and 109.75 s.
@@ -20,4 +21,4 @@
 ## Weakest shot, and what I'd change with more time
 - The mark scene (15–22 s) is a plain lockup and headline on the dark ground. It could enter through the flooded code block instead of a fresh dark frame.
 - The Vultr architecture line is text only. With a live Vultr deploy, a real `/healthz` showing `runsc` would prove it.
-- Adding a music bed: drop a track into assets/ and add an `<audio id="bgm">` at about 0.15 volume in index.html.
+- Still no music bed. Adding one: drop a track into assets/ and add an `<audio id="bgm">` at about 0.15 volume in index.html.

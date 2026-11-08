@@ -76,5 +76,27 @@ def test_three_demo_verdicts():
     print("ok: REPRODUCED / NOT_REPRODUCED / HOSTILE", sorted(kinds))
 
 
+def test_playground_attacks():
+    """Every one-click attack on /sandbox is caught, capped or killed, and leaks no secret."""
+    from triage import config, sandbox
+    from triage.attacks import ATTACKS
+    empty = config.CACHE / "empty"
+    empty.mkdir(parents=True, exist_ok=True)
+    expect = {"steal": "canary_read", "exfil": "network_attempt", "shell": "process_spawn", "fork": "process_spawn"}
+    for key, (_, _, code) in ATTACKS.items():
+        r = sandbox.run(code, empty, seconds=10)
+        kinds = {e["kind"] for e in r["events"]}
+        if key in expect:
+            assert expect[key] in kinds, (key, kinds)
+        if key in ("memory", "hang"):
+            assert r["kill_reason"], key
+        if key == "env":
+            assert "none." in r["stdout"], r["stdout"]
+        if key == "write":
+            assert "WROTE" not in r["stdout"], r["stdout"]
+    print("ok: all", len(ATTACKS), "playground attacks contained")
+
+
 if __name__ == "__main__":
     test_three_demo_verdicts()
+    test_playground_attacks()

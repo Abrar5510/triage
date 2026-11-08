@@ -35,7 +35,7 @@ def _docker(*args, timeout=30):
     return subprocess.run(["docker", *args], capture_output=True, text=True, timeout=timeout)
 
 
-def run(script: str, site_dir: Path) -> dict:
+def run(script: str, site_dir: Path, seconds: int = config.LIMIT_SECONDS) -> dict:
     """Run `script` against the packages in `site_dir`. Returns the evidence for this run."""
     run_id = uuid.uuid4().hex[:12]
     work = config.CACHE / "runs" / run_id
@@ -71,10 +71,10 @@ def run(script: str, site_dir: Path) -> dict:
         if p.returncode != 0:
             raise RuntimeError(f"sandbox failed to start: {p.stderr.strip()[:500]}")
         try:
-            _docker("wait", name, timeout=config.LIMIT_SECONDS)
+            _docker("wait", name, timeout=seconds)
         except subprocess.TimeoutExpired:
             _docker("kill", name)
-            kill_reason = f"wall-clock limit ({config.LIMIT_SECONDS}s)"
+            kill_reason = f"wall-clock limit ({seconds}s)"
         wall_ms = int((time.monotonic() - started) * 1000)
         state = json.loads(_docker("inspect", "--format", "{{json .State}}", name).stdout or "{}")
         logs = _docker("logs", name, timeout=60)

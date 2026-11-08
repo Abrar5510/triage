@@ -2,31 +2,48 @@
 
 **Every bug bounty report, reproduced or rejected before a human reads it.**
 
-Triage is an AI agent for security teams and open-source maintainers. It reads an incoming vulnerability report, rebuilds the exact affected library version inside a disposable sandbox on Vultr, writes and runs a proof of concept, runs the same test again on the patched version, and returns a verdict backed by real execution evidence.
+> In January 2026, **curl ended its bug bounty** because maintainers were drowning in AI-written reports describing bugs that did not exist ([The Register](https://www.theregister.com/2026/01/21/curl_ends_bug_bounty/)). AI made reports free to write, and checking them still costs a senior engineer. The PoC attached to each one is untrusted code from a stranger.
+>
+> **Triage does the checking.** It rebuilds the exact library version in a disposable sandbox on Vultr, runs the claim, runs it again on the patched version, and contains anything hostile. Models propose, sandboxes execute, rules decide.
 
-> Built for the **Vultr: Agent Rush Hackathon**, Challenge 1 (Blast Radius Zero).
+Built for the **Vultr: Agent Rush Hackathon**, Challenge 1 (Blast Radius Zero).
 
-**Live app:** _set after deploy_ · **Demo video:** _set after upload_ · **Slides:** [docs/slides.pdf](docs/slides.pdf)
+| ⏱ Judge in 60 seconds | |
+|---|---|
+| **1. Open the live app** | **LIVE_URL**: the inbox already holds three finished verdicts, one of each |
+| **2. Attack it yourself** | **LIVE_URL/sandbox**: steal the keys, phone home, fork-bomb it. Eight one-click attacks or your own Python, results in under a second |
+| **3. Watch a live triage** | Press **Real CVE** on the home page and watch the agent stream its work |
+| **Video** (2 min, narrated) | VIDEO_URL |
+| **Slides** | [docs/slides.pdf](docs/slides.pdf) |
 
 ![Triage report view: a hostile proof of concept contained](docs/img/hostile.png)
 
 <table><tr>
 <td><a href="docs/img/reproduced.png"><img src="docs/img/reproduced.png" alt="Reproduced: same test, vulnerable vs patched"></a><br><sub><b>Reproduced:</b> same test, two fresh sandboxes, vulnerable vs patched</sub></td>
 <td><a href="docs/img/rejected.png"><img src="docs/img/rejected.png" alt="Rejected at grounding"></a><br><sub><b>Rejected:</b> the function never existed, nothing executed</sub></td>
-<td><a href="docs/img/home.png"><img src="docs/img/home.png" alt="Ranked inbox"></a><br><sub><b>Inbox:</b> ranked for the reviewer, one-click demos</sub></td>
+<td><a href="docs/img/sandbox.png"><img src="docs/img/sandbox.png" alt="Break the sandbox playground"></a><br><sub><b>Break the sandbox:</b> attack it yourself, every run contained</sub></td>
 </tr></table>
 
----
+## Results
 
-## The problem
+| | Report | Verdict | Time | Evidence |
+|---|---|---|---|---|
+| **A** | Real sqlparse DoS ([CVE-2024-4340](https://github.com/advisories/GHSA-2m57-hf25-phgg)) | ✅ **Reproduced** | 53 s | `VULNERABLE` on 0.4.4, `NOT_VULNERABLE` on 0.5.0, same test, two fresh sandboxes |
+| **B** | CVSS 9.8 "RCE" in `sqlparse.utils.eval_expression()` | ❌ **Rejected** | 24 s | The function does not exist in the real source. **Nothing executed.** |
+| **C** | Plausible bug, PoC steals creds + phones home, prompt injection | 🚨 **Hostile** | 35 s | Canary read, DNS lookup, blocked connect, injection flagged, container destroyed |
 
-Security inboxes are drowning in reports that look convincing and are not real.
+| Attack: click to run it live | What the sandbox did |
+|---|---|
+| [Read `~/.aws/credentials`](LIVE_URL/sandbox?attack=steal&run=1) | Served a per-run fake key; `canary read` + `canary leak` recorded |
+| [POST to an outside server](LIVE_URL/sandbox?attack=exfil&run=1) | `[Errno 101] Network is unreachable`; `dns lookup` + `network attempt` recorded |
+| [Dump the environment](LIVE_URL/sandbox?attack=env&run=1) | No secrets: the orchestrator's API key never enters a sandbox |
+| [Spawn a shell](LIVE_URL/sandbox?attack=shell&run=1) | Runs as `nobody`, `/root` denied; `process spawn` recorded |
+| [Overwrite `/etc/passwd`, plant a backdoor](LIVE_URL/sandbox?attack=write&run=1) | `Permission denied` / `Read-only file system` |
+| [Fork bomb](LIVE_URL/sandbox?attack=fork&run=1) | Stopped at 127 processes by the PID cap |
+| [Allocate RAM forever](LIVE_URL/sandbox?attack=memory&run=1) | Killed at the 512 MB memory cap |
+| [Infinite loop](LIVE_URL/sandbox?attack=hang&run=1) | Killed by the wall-clock limit |
 
-- Generative AI made it free to write a polished vulnerability report: a CVE-style title, a CVSS 9.8 score, a confident code path. Many describe functions that do not exist.
-- Every report still has to be read by a senior engineer, because the one real report in the pile might be critical. Maintainers of well-known open-source projects have said publicly that this flood is burning them out.
-- The proof-of-concept code attached to a report is **untrusted code from a stranger**. Running it on a laptop to check it is exactly the wrong thing to do.
-
-The cost lands on the scarcest people in the building: the ones who can tell real vulnerabilities from noise.
+Every result above comes from a real run (`tests/test_pipeline.py` and the playground), not a mock.
 
 ## What Triage does
 
@@ -110,16 +127,6 @@ The VM is the control layer, not static hosting: it hosts the web app, the orche
 | **Vultr Cloud Compute** | One Ubuntu 24.04 VM runs the web app, the agent orchestrator, the package cache and the Docker + gVisor sandbox runtime behind Caddy (automatic HTTPS). |
 | **Vultr Serverless Inference** | Every LLM call: intake screening, claim extraction, reproduction-test writing, retry reasoning and the reviewer note. Called through the OpenAI-compatible API at `https://api.vultrinference.com/v1` ([`triage/llm.py`](triage/llm.py)). Three model roles, each one env var: `TRIAGE_MODEL_FAST`, `TRIAGE_MODEL_SMART`, `TRIAGE_MODEL_SAFETY`. |
 
-## Demo
-
-Three reports go in. Three correct verdicts come out. All three are one-click buttons on the home page.
-
-| Report | What it is | Verdict | Evidence |
-|---|---|---|---|
-| **A** | Real, already-fixed DoS in **sqlparse** ([CVE-2024-4340](https://github.com/advisories/GHSA-2m57-hf25-phgg)) | ✅ Reproduced | `RecursionError` on 0.4.4 → `VULNERABLE`; handled `SQLParseError` on 0.5.0 → `NOT_VULNERABLE` |
-| **B** | Polished CVSS 9.8 "RCE" in `sqlparse.utils.eval_expression()` | ❌ Not reproduced | Grounding: the function does not exist in sqlparse 0.4.4. Nothing executed. |
-| **C** | Plausible bug + PoC that steals credentials and phones home + prompt injection | 🚨 Hostile | Canary read, DNS lookup, blocked connect; injection flagged |
-
 ## Run it
 
 ### On a Vultr VM (production)
@@ -184,6 +191,7 @@ Runs all three demo reports end to end against the real sandbox, real PyPI downl
 | `GET` | `/api/reports` | List reports |
 | `GET` | `/api/reports/{id}` | Claims, grounding, every run (script, stdout, stderr, exit, memory, policy events), verdict |
 | `GET` | `/api/reports/{id}/events` | Server-Sent Events stream of pipeline progress |
+| `GET`/`POST` | `/sandbox` | Break-the-sandbox playground: runs any Python in a fresh sandbox (10 s cap, no model) |
 | `GET` | `/healthz` | Sandbox runtime and whether an inference key is configured |
 
 ## Threat model
@@ -197,7 +205,7 @@ Runs all three demo reports end to end against the real sandbox, real PyPI downl
 | Report text manipulates the agent | Intake screen; report wrapped as data; rules decide verdicts; model never chooses sandbox settings |
 | Malicious package build scripts | Binary wheels only (`--only-binary=:all:`); no `setup.py` ever runs on the host |
 | API key leakage | Key lives only in the orchestrator's environment (`/opt/triage/.env`, mode 600) |
-| Public demo abuse | 20 k character limit, queue of 5, one triage at a time |
+| Public demo abuse | 20 k character limit, queue of 5, one triage at a time; playground capped at 2 concurrent sandboxes, 10 s each |
 
 ## Scope and honest limits
 

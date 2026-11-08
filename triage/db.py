@@ -2,8 +2,11 @@
 import json
 import sqlite3
 from contextlib import closing
+from pathlib import Path
 
 from . import config
+
+SEED = Path(__file__).with_name("samples") / "seed.json"
 
 SCHEMA = """
 CREATE TABLE IF NOT EXISTS reports (
@@ -36,7 +39,24 @@ def init():
         # A restart mid-run leaves reports stuck; mark them so the inbox stays honest.
         c.execute("UPDATE reports SET status='done', verdict='INCONCLUSIVE', explanation='Interrupted by a server restart.' "
                   "WHERE status NOT IN ('done')")
+        if not c.execute("SELECT 1 FROM reports LIMIT 1").fetchone():
+            _seed(c)
         c.commit()
+
+
+def _seed(c):
+    """A fresh install opens on three recorded runs (one per verdict), so the inbox is never empty."""
+    def put(table, row):
+        c.execute(f"INSERT INTO {table} ({', '.join(row)}) VALUES ({', '.join('?' * len(row))})", list(row.values()))
+    for r in json.loads(SEED.read_text()):
+        runs, log = r.pop("runs"), r.pop("log")
+        put("reports", {k: json.dumps(v) if k in ("claims", "grounding", "intake") and v is not None else v for k, v in r.items()})
+        for run in runs:
+            put("runs", {**run, "events": json.dumps(run["events"])})
+        put("events", {"report_id": r["id"], "stage": "replay", "level": "info", "created_at": r["created_at"],
+                       "message": "Recorded demo run, loaded at install. Press a demo button for a live triage."})
+        for e in log:
+            put("events", {k: v for k, v in e.items() if k != "id"})
 
 
 def execute(sql, args=()):

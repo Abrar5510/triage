@@ -1,16 +1,47 @@
-"""Render the cover (PNG) and deck (PDF). Usage: uv run --with playwright python docs/deck/render.py"""
+"""Render the cover (PNG), deck (PDF) and slide PNGs with headless Chrome. Stdlib only.
+
+    LIVE_URL=https://triage.example.com python docs/deck/render.py
+
+Without LIVE_URL, lines that mention it are left out. CHROME overrides the browser path.
+Slide PNGs need pdftoppm (poppler); they are skipped without it.
+"""
+import glob
+import os
+import shutil
+import subprocess
+import tempfile
 from pathlib import Path
-from playwright.sync_api import sync_playwright
 
 D = Path(__file__).resolve().parent
-with sync_playwright() as p:
-    b = p.chromium.launch()
-    pg = b.new_page(viewport={"width": 1920, "height": 1080})
-    pg.goto((D / "cover.html").as_uri()); pg.wait_for_load_state("networkidle")
-    pg.screenshot(path=str(D.parent / "img" / "cover.png"))
-    pg.goto((D / "slides.html").as_uri()); pg.wait_for_load_state("networkidle")
-    pg.pdf(path=str(D.parent / "slides.pdf"), width="1920px", height="1080px", print_background=True)
-    for i, s in enumerate(pg.query_selector_all("section.s"), 1):
-        s.screenshot(path=str(D / f"slide-{i:02d}.png"))
-    b.close()
+CHROME = os.getenv("CHROME") or next(iter(
+    glob.glob(os.path.expanduser("~/Library/Caches/ms-playwright/chromium-*/chrome-mac*/*.app/Contents/MacOS/*"))
+    + [shutil.which(n) for n in ("google-chrome", "chromium", "chromium-browser") if shutil.which(n)]
+    + ["/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"]))
+url = os.getenv("LIVE_URL", "").rstrip("/")
+
+
+def page(name):
+    html = (D / name).read_text()
+    html = html.replace("LIVE_URL", url) if url else "\n".join(l for l in html.splitlines() if "LIVE_URL" not in l)
+    tmp = D / f".render-{name}"
+    tmp.write_text(html)
+    return tmp
+
+
+def chrome(*args):
+    with tempfile.TemporaryDirectory() as prof:
+        subprocess.run([CHROME, "--headless=new", "--disable-gpu", "--hide-scrollbars", f"--user-data-dir={prof}",
+                        "--virtual-time-budget=5000", *args], check=True, capture_output=True)
+
+
+cover, slides = page("cover.html"), page("slides.html")
+try:
+    chrome("--window-size=1920,1080", f"--screenshot={D.parent / 'img' / 'cover.png'}", cover.as_uri())
+    chrome("--no-pdf-header-footer", f"--print-to-pdf={D.parent / 'slides.pdf'}", slides.as_uri())
+finally:
+    cover.unlink(); slides.unlink()
+if shutil.which("pdftoppm"):
+    for old in D.glob("slide-*.png"):
+        old.unlink()
+    subprocess.run(["pdftoppm", "-png", "-r", "72", D.parent / "slides.pdf", D / "slide"], check=True)
 print("ok")

@@ -35,6 +35,14 @@
   {% if inference[1] == 'missing' %}· no API key configured, demo runs will end Inconclusive{% else %}· {{ config.MODEL_SMART }}{% endif %}
 </p>
 
+<section class="cta-break">
+  <div>
+    <h2>Think the sandbox is weak? Attack it.</h2>
+    <p>Steal the AWS keys, phone home, fork-bomb it, fill the RAM. Eight one-click attacks or your own Python, each in a fresh container. Results in seconds, no model involved.</p>
+  </div>
+  <a class="btn btn-danger" href="/sandbox">Break the sandbox →</a>
+</section>
+
 <section class="stats">
   <div class="stat"><b>{{ stats.total }}</b><span>reports triaged</span></div>
   <div class="stat s-ok"><b>{{ stats.get('REPRODUCED', 0) }}</b><span>reproduced</span></div>

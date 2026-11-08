@@ -1,0 +1,102 @@
+<template>
+  <style>
+    #root { position: absolute; inset: 0; background: #0b0d10; overflow: hidden; }
+    #b-left { position: absolute; left: 110px; top: 300px; width: 560px; }
+    #b-kicker { font: 500 22px "JetBrains Mono", monospace; letter-spacing: .14em; text-transform: uppercase; color: #ff5c6c; margin-bottom: 30px; }
+    .b-line { position: absolute; left: 0; top: 70px; font-size: 76px; color: #e7eaf0; width: 600px; }
+    .b-line em { font-style: normal; color: #ff5c6c; }
+    #b-l4 em { color: #3ddc97; }
+    #b-wrap { position: absolute; left: 690px; top: 120px; }
+    #b-ui { zoom: 1.5; width: 770px; }
+    #b-ui .pg { grid-template-columns: 300px 1fr; }
+    #b-ui .pg-main { position: relative; height: 520px; }
+    .b-res { position: absolute; inset: 0 0 auto 0; display: flex; flex-direction: column; gap: 14px; }
+    #b-ui pre { margin: 8px 0 0; font-size: 12.5px; }
+  </style>
+  <div id="root" data-composition-id="break" data-width="1920" data-height="1080">
+    <div id="b-left">
+      <div id="b-kicker" class="clip" data-start="0.3" data-duration="9.4">Don't take our word for it</div>
+      <div id="b-l1" class="b-line line clip" data-hold data-start="0.9" data-duration="2.6"><span class="w">Steal </span><span class="w">the </span><span class="w"><em>keys.</em></span></div>
+      <div id="b-l2" class="b-line line clip" data-hold data-start="3.5" data-duration="2.4"><span class="w">Fork-bomb </span><span class="w"><em>it.</em></span></div>
+      <div id="b-l3" class="b-line line clip" data-hold data-start="5.9" data-duration="2.0"><span class="w">Fill </span><span class="w">the </span><span class="w"><em>RAM.</em></span></div>
+      <div id="b-l4" class="b-line line clip" data-hold data-start="7.9" data-duration="2.0"><span class="w">Caught, </span><span class="w">capped, </span><span class="w"><em>killed.</em></span></div>
+    </div>
+    <div id="b-wrap">
+      <div id="b-ui">
+        <div class="pg">
+          <div class="pg-attacks">
+            <div class="atk" id="b-a1"><b>Steal AWS keys</b><span>Read ~/.aws/credentials and print them.</span><span class="sample-go">→</span></div>
+            <div class="atk"><b>Phone home</b><span>POST stolen data to an outside server.</span><span class="sample-go">→</span></div>
+            <div class="atk"><b>Hunt for API keys</b><span>Dump every environment variable.</span><span class="sample-go">→</span></div>
+            <div class="atk"><b>Pop a shell</b><span>Spawn /bin/sh and look around the host.</span><span class="sample-go">→</span></div>
+            <div class="atk"><b>Tamper with the system</b><span>Overwrite system files and plant a backdoor.</span><span class="sample-go">→</span></div>
+            <div class="atk" id="b-a2"><b>Fork bomb</b><span>Spawn processes until the machine falls over.</span><span class="sample-go">→</span></div>
+            <div class="atk" id="b-a3"><b>Memory bomb</b><span>Allocate RAM until something dies.</span><span class="sample-go">→</span></div>
+            <div class="atk"><b>Run forever</b><span>Burn CPU in an infinite loop.</span><span class="sample-go">→</span></div>
+          </div>
+          <div class="pg-main">
+            <div class="b-res" id="b-r1">
+              <div class="verdict v-hostile"><div class="verdict-main"><span class="verdict-label">Result</span><strong>Caught: 2 policy events</strong></div>
+                <p class="verdict-note">That key is a fake minted for this run only (a canary).</p></div>
+              <article class="run run-danger">
+                <dl class="metrics"><div><dt>exit</dt><dd>0</dd></div><div><dt>wall</dt><dd>264 ms</dd></div><div><dt>peak mem</dt><dd>16.2 MB</dd></div><div><dt>network</dt><dd>none</dd></div></dl>
+                <div class="policy"><p class="policy-head">🚨 Contained: 2 policy events</p>
+                  <ul><li><b>canary read</b> /home/triage/.aws/credentials</li><li><b>canary leak</b> canary credential appeared in program output</li></ul></div>
+                <pre>aws_access_key_id = AKIA15C810CC72267F87</pre>
+              </article>
+            </div>
+            <div class="b-res" id="b-r2">
+              <div class="verdict v-hostile"><div class="verdict-main"><span class="verdict-label">Result</span><strong>Caught: 1 policy event</strong></div>
+                <p class="verdict-note">The PID cap stopped it. The spawn was recorded.</p></div>
+              <article class="run run-danger">
+                <dl class="metrics"><div><dt>exit</dt><dd>0</dd></div><div><dt>wall</dt><dd>163 ms</dd></div><div><dt>peak mem</dt><dd>16.2 MB</dd></div><div><dt>network</dt><dd>none</dd></div></dl>
+                <div class="policy"><p class="policy-head">🚨 Contained: 1 policy event</p><ul><li><b>process spawn</b> os.fork: ()</li></ul></div>
+                <pre>stopped after 127 processes: [Errno 11] Resource temporarily unavailable</pre>
+              </article>
+            </div>
+            <div class="b-res" id="b-r3">
+              <div class="verdict v-inconclusive"><div class="verdict-main"><span class="verdict-label">Result</span><strong>Killed: memory limit (512m)</strong></div>
+                <p class="verdict-note">The sandbox hit a hard limit and killed the run. The host never noticed.</p></div>
+              <article class="run">
+                <dl class="metrics"><div><dt>exit</dt><dd>137</dd></div><div><dt>wall</dt><dd>240 ms</dd></div><div><dt>network</dt><dd>none</dd></div><div class="m-kill"><dt>killed</dt><dd>memory limit (512m)</dd></div></dl>
+                <pre>holding 384 MB
+holding 448 MB</pre>
+              </article>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <script>
+    (function () {
+      const tl = gsap.timeline({ paused: true });
+      const words = (sel, at) => tl.fromTo(sel + " .w", { opacity: 0, filter: "blur(6px)" }, { opacity: 1, filter: "blur(0px)", duration: 0.16, stagger: 0.08, ease: "power2.out" }, at);
+      tl.fromTo("#b-wrap", { opacity: 0, scale: 1.05, filter: "blur(10px)" }, { opacity: 1, scale: 1, filter: "blur(0px)", duration: 0.55, ease: "expo.out" }, 0);
+      tl.fromTo("#b-kicker", { opacity: 0 }, { opacity: 1, duration: 0.3 }, 0.3);
+      tl.set(["#b-r1", "#b-r2", "#b-r3"], { opacity: 0 }, 0);
+      // attack 1: steal
+      words("#b-l1", 0.9);
+      tl.set("#b-a1", { className: "atk on" }, 1.1);
+      tl.fromTo("#b-r1", { opacity: 0, y: 12 }, { opacity: 1, y: 0, duration: 0.3, ease: "expo.out" }, 1.4);
+      tl.to("#b-l1", { opacity: 0, duration: 0.2 }, 3.3);
+      // attack 2: fork bomb
+      words("#b-l2", 3.5);
+      tl.set("#b-a1", { className: "atk" }, 3.6);
+      tl.set("#b-a2", { className: "atk on" }, 3.6);
+      tl.to("#b-r1", { opacity: 0, duration: 0.15 }, 3.6);
+      tl.fromTo("#b-r2", { opacity: 0, y: 12 }, { opacity: 1, y: 0, duration: 0.3, ease: "expo.out" }, 3.9);
+      tl.to("#b-l2", { opacity: 0, duration: 0.2 }, 5.7);
+      // attack 3: memory bomb
+      words("#b-l3", 5.9);
+      tl.set("#b-a2", { className: "atk" }, 6.0);
+      tl.set("#b-a3", { className: "atk on" }, 6.0);
+      tl.to("#b-r2", { opacity: 0, duration: 0.15 }, 6.0);
+      tl.fromTo("#b-r3", { opacity: 0, y: 12 }, { opacity: 1, y: 0, duration: 0.3, ease: "expo.out" }, 6.3);
+      tl.to("#b-l3", { opacity: 0, duration: 0.2 }, 7.7);
+      words("#b-l4", 7.9);
+      tl.to(["#b-left", "#b-wrap"], { opacity: 0, filter: "blur(10px)", duration: 0.25, ease: "power2.in" }, 9.7);
+      window.__timelines["break"] = tl;
+    })();
+  </script>
+</template>

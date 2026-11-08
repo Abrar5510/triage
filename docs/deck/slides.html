@@ -59,14 +59,15 @@ td:last-child { color: var(--muted); }
 
 <!-- 2 -->
 <section class="s">
-  <p class="k">The problem</p>
-  <h2>Security inboxes are drowning in reports that look real and aren't.</h2>
-  <div class="grid3">
-    <div class="card"><div class="big grn">$0</div><h3>to write a convincing fake</h3><p>CVE-style title, CVSS 9.8, confident code path. Generated in seconds, often about functions that don't exist.</p></div>
-    <div class="card"><div class="big" style="color:var(--warn)">100%</div><h3>still read by a senior engineer</h3><p>The one real report in the pile might be critical, so every report costs an expert's evening.</p></div>
-    <div class="card"><div class="big red">PoC</div><h3>is untrusted code from a stranger</h3><p>Running it on a laptop to check it is exactly the wrong move. Some are written to steal credentials.</p></div>
+  <p class="k" style="color:var(--danger)">January 2026</p>
+  <h1 style="font-size:120px; max-width:1600px">curl ended its<br>bug bounty.</h1>
+  <p style="margin-top:44px; font-size:38px; color:var(--text); max-width:1450px">Its maintainers were drowning in AI-written reports about bugs that did not exist.</p>
+  <div style="display:grid; grid-template-columns:repeat(3,1fr); gap:0; margin-top:auto; border-top:1px solid var(--line)">
+    <div style="padding:34px 40px 0 0"><div class="big grn" style="font-size:64px">$0</div><p style="font-size:26px">to write a convincing fake: CVSS 9.8, confident code path, invented function</p></div>
+    <div style="padding:34px 40px 0; border-left:1px solid var(--line)"><div class="big" style="font-size:64px; color:var(--warn)">1 expert</div><p style="font-size:26px">still has to read every one, because the real one might be critical</p></div>
+    <div style="padding:34px 0 0 40px; border-left:1px solid var(--line)"><div class="big red" style="font-size:64px">PoC</div><p style="font-size:26px">attached to each report is untrusted code from a stranger</p></div>
   </div>
-  <div class="foot"><span>Triage</span><span>02</span></div>
+  <div class="foot"><span>Source: The Register, 21 Jan 2026 · BleepingComputer</span><span>02</span></div>
 </section>
 
 <!-- 3 -->
@@ -171,6 +172,23 @@ verdict  <span class="red">HOSTILE</span></pre>
 </section>
 
 <!-- 8 -->
+<section class="s" style="background:var(--bg) radial-gradient(1400px 800px at 85% 0%, rgba(255,92,108,.12), transparent 60%)">
+  <p class="k" style="color:var(--danger)">Don't take our word for it</p>
+  <h2>Attack it yourself. Eight one-click attacks, or your own Python.</h2>
+  <pre style="font-size:25px; line-height:1.75"><span class="dim">attack                      sandbox                                   time</span>
+read ~/.aws/credentials     <span class="red">CANARY READ</span>  per-run fake key served       199 ms
+POST to outside server      <span class="red">NETWORK</span>      Errno 101 unreachable         0.3 s
+dump env for API keys       <span class="grn">none found</span>   key never enters a sandbox    0.2 s
+spawn /bin/sh               <span class="red">PROC SPAWN</span>   uid nobody, /root denied      0.2 s
+overwrite /etc/passwd       <span class="grn">blocked</span>      read-only, permission denied  0.2 s
+fork bomb                   <span class="grn">capped</span>       stopped at 127 processes      0.2 s
+allocate RAM forever        <span style="color:var(--warn)">KILLED</span>       512 MB memory cap             0.3 s
+infinite loop               <span style="color:var(--warn)">KILLED</span>       wall-clock limit              10 s</pre>
+  <p style="margin-top:36px; color:var(--text); font: 30px var(--mono)" class="live-sandbox">LIVE_URL/sandbox</p>
+  <div class="foot"><span>Triage · every row is a real run</span><span>08</span></div>
+</section>
+
+<!-- 8 -->
 <section class="s">
   <p class="k">Built on Vultr</p>
   <h2>The VM is the control layer. Inference is the brain.</h2>
@@ -179,7 +197,7 @@ verdict  <span class="red">HOSTILE</span></pre>
     <div class="card"><span class="tag t-ok">Vultr Serverless Inference</span><h3>Every LLM call</h3><p>Intake screening, claim extraction, reproduction-test writing, retry reasoning and the reviewer note, through the OpenAI-compatible API. Fast, smart and safety model roles, each one env var.</p></div>
   </div>
   <p style="margin-top:48px">The orchestrator holds the only API key. Sandboxes never see it, and they have no route to use it anyway.</p>
-  <div class="foot"><span>Triage</span><span>08</span></div>
+  <div class="foot"><span>Triage</span><span>09</span></div>
 </section>
 
 <!-- 9 -->
@@ -192,7 +210,7 @@ verdict  <span class="red">HOSTILE</span></pre>
     <div class="card"><h3>Bug bounty platforms</h3><p>Automated first-pass triage at intake, before a paid analyst ever looks.</p></div>
   </div>
   <p style="margin-top:56px; color:var(--text)">A human always makes the final call. Triage decides which reports deserve that human's time first.</p>
-  <div class="foot"><span>Triage</span><span>09</span></div>
+  <div class="foot"><span>Triage</span><span>10</span></div>
 </section>
 
 <!-- 10 -->
@@ -204,7 +222,8 @@ verdict  <span class="red">HOSTILE</span></pre>
     <span class="tag t-mute" style="font-size:26px">✗ Not reproduced</span>
     <span class="tag t-bad" style="font-size:26px">🚨 Hostile, contained</span>
   </div>
-  <p style="margin-top:56px; font: 30px var(--mono); color: var(--text)" id="url">github.com/Abrar5510/triage</p>
+  <p style="margin-top:56px; font: 34px var(--mono); color: var(--ok)" id="url">LIVE_URL</p>
+  <p style="margin-top:12px; font: 26px var(--mono)">github.com/Abrar5510/triage</p>
   <div class="foot"><span>Vultr: Agent Rush Hackathon · Blast Radius Zero</span><span>MIT licensed</span></div>
 </section>
 

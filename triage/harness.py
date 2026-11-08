@@ -50,7 +50,7 @@ def hook(event, args):
         emit("network_attempt", f"sendto {args[1]!r}")
     elif event == "socket.getaddrinfo":
         emit("dns_lookup", f"resolve {args[0]!r}")
-    elif event in ("subprocess.Popen", "os.system", "os.exec", "os.posix_spawn", "os.spawn", "pty.spawn"):
+    elif event in ("subprocess.Popen", "os.system", "os.exec", "os.posix_spawn", "os.spawn", "os.fork", "pty.spawn"):
         emit("process_spawn", f"{event}: {str(args[:2])[:200]}")
     elif event == "ctypes.dlopen":
         emit("native_load", f"dlopen {args[0]!r}")

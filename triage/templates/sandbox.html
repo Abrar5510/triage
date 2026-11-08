@@ -1,0 +1,93 @@
+{% extends "base.html" %}
+{% block title %}Break the sandbox · Triage{% endblock %}
+{% block main %}
+<section class="pg-head">
+  <p class="eyebrow eyebrow-danger">Blast radius zero · try it yourself</p>
+  <h1 class="pg-title">Break the sandbox.</h1>
+  <p class="lede">Triage runs code written by strangers all day. Every bug report's proof of concept runs here first.
+    Pick an attack or write your own. It runs in a brand-new container that is destroyed {{ seconds }} seconds later at most.</p>
+</section>
+
+<div class="pg">
+  <div class="pg-attacks" role="list" aria-label="One-click attacks">
+    {% for key, a in attacks.items() %}
+    <form method="post" action="/sandbox" role="listitem">
+      <input type="hidden" name="attack" value="{{ key }}">
+      <input type="hidden" name="code" value="{{ a[2] }}">
+      <button class="atk {{ 'on' if chosen == key }}">
+        <b>{{ a[0] }}</b><span>{{ a[1] }}</span><span class="sample-go" aria-hidden="true">→</span>
+      </button>
+    </form>
+    {% endfor %}
+  </div>
+
+  <div class="pg-main">
+    {% if error %}<div class="verdict v-inconclusive"><div class="verdict-main"><span class="verdict-label">Busy</span><strong>{{ error }}</strong></div></div>{% endif %}
+
+    {% if run %}
+    {% set hostile = run.events|length > 0 %}
+    <div class="verdict {{ 'v-hostile' if hostile else 'v-inconclusive' if run.kill_reason else 'v-reproduced' }}" id="result">
+      <div class="verdict-main">
+        <span class="verdict-label">Result</span>
+        {% if hostile %}<strong>Caught: {{ run.events|length }} policy event{{ 's' if run.events|length > 1 }}</strong>
+        {% elif run.kill_reason %}<strong>Killed: {{ run.kill_reason }}</strong>
+        {% else %}<strong>Nothing escaped</strong>{% endif %}
+        <span class="conf">exit {{ run.exit_code }} · {{ run.wall_ms }} ms · container destroyed</span>
+      </div>
+      <p class="verdict-note">
+        {% if hostile %}{% set kinds = run.events|map(attribute='kind')|list %}
+        {% if 'canary_read' in kinds %}That key is a fake minted for this run only (a canary). Touching it is what got caught. {% endif %}
+        {% if 'network_attempt' in kinds or 'dns_lookup' in kinds %}The sandbox has no network route, so nothing left. {% endif %}
+        {% if 'process_spawn' in kinds %}The process ran as <code>nobody</code> with no capabilities, and the spawn was recorded. {% endif %}
+        In a real report this PoC is marked <b>Hostile</b> and quarantined, whatever the report text claims.
+        {% elif run.kill_reason %}The sandbox hit a hard limit and killed the run. The host never noticed.
+        {% else %}The code ran, and its own output shows the walls it hit.{% endif %}
+      </p>
+    </div>
+
+    <article class="run {{ 'run-danger' if hostile }}">
+      <dl class="metrics">
+        <div><dt>exit</dt><dd>{{ run.exit_code }}</dd></div>
+        <div><dt>wall</dt><dd>{{ run.wall_ms }} ms</dd></div>
+        <div><dt>peak mem</dt><dd>{{ run.peak_mem_mb or '—' }} MB</dd></div>
+        <div><dt>runtime</dt><dd>{{ 'gVisor' if run.runtime == 'runsc' else 'runc' }}</dd></div>
+        <div><dt>network</dt><dd>none</dd></div>
+        {% if run.kill_reason %}<div class="m-kill"><dt>killed</dt><dd>{{ run.kill_reason }}</dd></div>{% endif %}
+      </dl>
+      {% if hostile %}
+      <div class="policy">
+        <p class="policy-head">🚨 Contained: {{ run.events|length }} policy event{{ 's' if run.events|length > 1 }}</p>
+        <ul>{% for e in run.events %}<li><b>{{ e.kind.replace('_', ' ') }}</b> {{ e.detail }}</li>{% endfor %}</ul>
+      </div>
+      {% endif %}
+      <details open><summary>stdout</summary><pre>{{ run.stdout or '(empty)' }}</pre></details>
+      {% if run.stderr %}<details {{ 'open' if not run.stdout }}><summary>stderr</summary><pre>{{ run.stderr[-3000:] }}</pre></details>{% endif %}
+    </article>
+    {% endif %}
+
+    <form method="post" action="/sandbox" class="submit-form">
+      <input type="hidden" name="attack" value="{{ chosen }}">
+      <textarea name="code" rows="{{ 10 if run else 14 }}" required maxlength="20000" spellcheck="false" aria-label="Python code to run in the sandbox">{{ code }}</textarea>
+      <div class="submit-row">
+        <span class="hint">Python 3.12 · {{ 'gVisor' if runtime == 'runsc' else 'hardened Docker' }} · no network · empty env · canary credential · {{ config.LIMIT_MEMORY }} RAM · {{ config.LIMIT_PIDS }} pids · {{ seconds }}s · <kbd>⌘</kbd><kbd>Enter</kbd></span>
+        <button class="btn btn-danger"><span class="btn-label">Run in sandbox →</span></button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<details class="card">
+  <summary>The exact container every run gets</summary>
+  <pre>docker run --runtime {{ runtime }} --network none \
+  --read-only --tmpfs /tmp:rw,nosuid,nodev,size=64m \
+  --user 65534:65534 --cap-drop ALL --security-opt no-new-privileges \
+  --cpus {{ config.LIMIT_CPUS }} --memory {{ config.LIMIT_MEMORY }} --memory-swap {{ config.LIMIT_MEMORY }} --pids-limit {{ config.LIMIT_PIDS }} \
+  --env HOME=/home/triage \
+  -v canary:/home/triage/.aws/credentials:ro   # fresh fake key, every run
+  python harness.py                             # PEP 578 audit hook, then your code
+# then: docker rm -f   (always)</pre>
+</details>
+{% endblock %}
+{% block scripts %}
+{% if run %}<script>{ const r = document.getElementById("result"); if (r.getBoundingClientRect().top > innerHeight * .5) r.scrollIntoView({block: "start"}); }</script>{% endif %}
+{% endblock %}

@@ -4,43 +4,49 @@
 Triage
 
 ## Short description (≤ 255 chars)
-An agent that reproduces or rejects every vulnerability report before a human reads it: it rebuilds the exact library version in a gVisor sandbox on Vultr, runs the PoC, compares vulnerable vs patched, and contains hostile code.
+curl killed its bug bounty over fake AI reports. Triage checks every report for you: it rebuilds the exact library in a gVisor sandbox on Vultr, proves vulnerable vs patched, rejects fakes, contains hostile PoCs. Try to break it live.
 
 ## Long description
-Security inboxes are drowning in AI-written vulnerability reports that look convincing and are not real, and every one still costs a senior engineer's time. Worse, the proof of concept attached to a report is untrusted code from a stranger.
+In January 2026, curl ended its bug bounty because its maintainers were drowning in AI-written vulnerability reports about bugs that did not exist. AI made reports free to write. Checking them still costs a senior engineer, and the proof of concept attached to each one is untrusted code from a stranger.
 
-Triage is a containment-first agent that does the first pass. It reads a report, extracts checkable claims with Vultr Serverless Inference, downloads the exact vulnerable package version (hash-verified wheels only), and checks the claimed function actually exists in the real source, deterministically, with no model involved. It then runs the reporter's PoC in a brand-new gVisor sandbox with no network, no secrets, a per-run canary credential, CPU/memory/PID/time caps and a PEP 578 audit hook. The agent writes its own reproduction test, runs it, reads the output and retries with errors fed back. Finally it runs the identical test against the patched version in another fresh sandbox. Fixed rules turn this evidence into one of four verdicts: Reproduced, Not reproduced, Hostile or Inconclusive. The model writes the reviewer note but never decides the verdict or touches sandbox settings.
+Triage does the checking. It extracts checkable claims with Vultr Serverless Inference, downloads the exact vulnerable package version (hash-verified wheels only), and confirms the claimed function exists in the real source, deterministically, with no model involved. It runs the reporter's PoC in a brand-new sandbox: gVisor, no network, empty environment, a per-run canary credential, CPU/memory/PID/time caps and a PEP 578 audit hook. The agent then writes its own reproduction test, retries with errors fed back, and runs the identical test on the patched version in another fresh sandbox. Fixed rules, not the model, turn this evidence into a verdict: Reproduced, Not reproduced, Hostile or Inconclusive.
 
-Demo: a real sqlparse CVE is Reproduced (vulnerable on 0.4.4, clean on 0.5.0); a polished CVSS 9.8 "RCE" in a function that never existed is rejected at grounding with nothing executed; and a report whose PoC tries to steal credentials and phone home, with a prompt injection hidden in the text, is flagged Hostile and contained.
+Results from real runs: a real sqlparse CVE is Reproduced (VULNERABLE on 0.4.4, NOT_VULNERABLE on 0.5.0). A polished CVSS 9.8 "RCE" in a function that never existed is rejected in 24 seconds with nothing executed. A report whose PoC steals credentials and phones home, with a prompt injection hidden in the text, is flagged Hostile and contained.
 
-Everything runs on Vultr: one Cloud Compute VM hosts the FastAPI web app with a live timeline, the orchestrator, the package cache and the Docker + gVisor runtime; every LLM call goes to Vultr Serverless Inference.
+Don't take our word for the containment: the live app has a "Break the sandbox" page with eight one-click attacks (steal the AWS keys, phone home, pop a shell, fork bomb, memory bomb, and more) or your own Python. Every run is caught, capped or killed in under a second, and the container is destroyed.
+
+Everything runs on Vultr: one Cloud Compute VM hosts the FastAPI app with a live timeline, the orchestrator, the package cache and the Docker + gVisor runtime; every LLM call goes to Vultr Serverless Inference.
 
 ## Tags
 Vultr, Serverless Inference, AI Agents, Security, Sandboxing, gVisor, Docker, FastAPI, Python, Bug Bounty, AppSec
 
 ## Links
 - Repo: https://github.com/Abrar5510/triage
-- Live app: (fill after deploy)
+- Live app: LIVE_URL (break the sandbox: LIVE_URL/sandbox)
 - Slides: docs/slides.pdf
 - Cover: docs/img/cover.png
-- Demo video: `docs/video/triage-demo.webm` (3:34, 1600×900, captioned, recorded from live runs). Upload to YouTube (unlisted) and paste the link. Not committed because of its size; regenerate with `node docs/video/record.mjs`.
+- Demo video: `docs/video/triage-demo.mp4` (2:00, 1920×1080, narrated, built from the real UI and real run data). Upload to YouTube (unlisted) and paste the link: VIDEO_URL. Source: `docs/video/film` (HyperFrames); narration lines in `docs/video/film/vo.tsv`.
 
 ---
 
-# Demo video script (about 3 minutes)
+# Demo video narration (as rendered)
 
-The recorded video above follows this script with on-screen captions. Use it as the voiceover if you narrate over it.
+| Time | Picture | Narration |
+|---|---|---|
+| 0:00 | Three report sheets land on a desk | "Three vulnerability reports just landed. They all look convincing. One is real. One is invented. One is an attack. And every proof of concept is code from a stranger." |
+| 0:15 | Triage mark | "Triage checks every report before a human reads it." |
+| 0:22 | Report A in the real UI: grounding, agent test, control run | "Report A. Triage downloads the exact version, and confirms the function is real. Then it writes its own test, and runs it in a brand-new sandbox. Vulnerable on the affected version. Clean on the patched one. Same test. Reproduced." |
+| 0:46 | Report B: grounding fails | "Report B claims a critical remote code execution. The function it names never existed. Rejected in seconds. Nothing ran." |
+| 0:56 | Report C: injection flagged, three policy events | "Report C hides an order for the agent: mark this as reproduced. It's flagged, and ignored. Its proof of concept reads a planted, fake credential, and tries to send it out. There is no route. Hostile. Contained." |
+| 1:22 | Ranked inbox | "The reviewer gets a ranked inbox, with proof instead of prose." |
+| 1:30 | Break the sandbox: steal keys, fork bomb, memory bomb | "Try to break it. Steal the keys. Fork bomb it. Fill the RAM. Caught, capped, or killed." |
+| 1:40 | The real docker flags | "Every run gets a fresh container. No network. No secrets. Destroyed after. Models propose. Sandboxes execute. Rules decide. All of it on Vultr." |
+| 1:52 | End card | "Triage. Try to break it." |
 
-**0:00 – 0:20 · Problem.** Slide 2. "Security teams read every vulnerability report, because one might be real. AI made fake ones free to write. And the PoC attached to each one is untrusted code from a stranger."
+## Live demo (if presenting in person, 3 minutes)
 
-**0:20 – 0:40 · What Triage does.** Slide 3. "Triage reproduces or rejects every report before a human reads it. Models propose, sandboxes execute, rules decide."
-
-**0:40 – 1:20 · Report A, real.** Live app home page → click *Real CVE*. Show the timeline streaming: claims, grounding found, the submitted PoC run, the agent's test, then the control run. Land on the differential strip: "Same test, two fresh sandboxes: VULNERABLE on 0.4.4, NOT_VULNERABLE on 0.5.0. Reproduced, with proof the patch fixes it."
-
-**1:20 – 1:45 · Report B, fake.** Click *AI-written fake*. "CVSS 9.8, very confident. Triage downloads the exact version and searches the real source: the function doesn't exist. Rejected in seconds, and nothing ran."
-
-**1:45 – 2:35 · Report C, the containment moment.** Click *Hostile PoC*. Point at the intake warning: "There's a prompt injection telling the agent to enable networking and mark this reproduced. It's flagged and ignored; the model never controls the sandbox." Then the red run card: "The PoC read the canary credential, a per-run fake, and tried to POST it out. No route: Network is unreachable. Three policy events, container destroyed, verdict Hostile."
-
-**2:35 – 2:55 · Vultr.** Slide 8 or `/healthz` showing `runsc`. "One Vultr VM runs the app, the orchestrator and gVisor sandboxes. Every LLM call goes to Vultr Serverless Inference."
-
-**2:55 – 3:00 · Close.** Inbox, ranked. "Reproduced first, hostile quarantined, fakes rejected. Triage gives reviewers proof instead of prose."
+1. **Hook (20 s).** Slide 2: "In January curl ended its bug bounty. AI made fake reports free; checking them still costs an expert."
+2. **Live triage (60 s).** Home page → **Real CVE**. Narrate the timeline as it streams; land on the vulnerable-vs-patched strip.
+3. **The fake (20 s).** Open the seeded Report B: "The function doesn't exist. Rejected, nothing ran."
+4. **Hand them the keyboard (60 s).** `/sandbox` → **Steal AWS keys** → **Fork bomb** → **Memory bomb**. Then invite a judge to type their own attack.
+5. **Close (20 s).** Slide 9: one Vultr VM, Vultr Serverless Inference. "Models propose, sandboxes execute, rules decide."
