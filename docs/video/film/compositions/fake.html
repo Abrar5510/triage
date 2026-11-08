@@ -1,0 +1,102 @@
+<template>
+  <style>
+    #root { position: absolute; inset: 0; background: #0b0d10; overflow: hidden; }
+    #f-main { position: absolute; inset: 0; }
+    .f-left { position: absolute; left: 110px; top: 380px; width: 600px; font-size: 64px; color: #e7eaf0; }
+    .f-left em { font-style: normal; color: #ff5c6c; }
+    #f-panel-wrap { position: absolute; left: 760px; top: 96px; }
+    #f-panel { zoom: 1.6; width: 680px; display: flex; flex-direction: column; gap: 20px; }
+    .f-badges { position: relative; display: inline-grid; }
+    .f-badges .badge { grid-area: 1 / 1; }
+    .f-strike { position: relative; display: inline-block; }
+    .f-strike i { position: absolute; left: -2px; right: -2px; top: 52%; height: 2px; background: #ff5c6c; transform-origin: 0 50%; }
+    #f-ground .g-bad { font-size: 17px; }
+  </style>
+  <div id="root" data-composition-id="fake" data-width="1920" data-height="1080">
+    <div id="f-main">
+      <div id="f-l1" class="clip line f-left" data-start="0.5" data-duration="2.6"><span class="w">A </span><span class="w">critical </span><span class="w">RCE, </span><span class="w"><em>CVSS 9.8</em></span></div>
+      <div id="f-l2" class="clip line f-left" data-start="3.3" data-duration="3.3" data-split>The function it names never existed</div>
+      <div id="f-l3" class="clip line f-left" data-start="6.8" data-duration="3.5" data-split>Rejected in 24 seconds. Nothing ran.</div>
+      <div id="f-panel-wrap">
+        <div id="f-panel">
+          <div class="report-head">
+            <div class="report-title">
+              <span class="f-badges"><span class="badge b-running" id="f-b-run">Running</span><span class="badge b-not_reproduced" id="f-b-done">Not reproduced</span></span>
+              <h1 class="h1-sm">Remote Code Execution in sqlparse via unsafe expression evaluation</h1>
+            </div>
+          </div>
+          <ol class="stepper" aria-label="Pipeline progress">
+            <li id="f-s1"><span class="st-dot">1</span><span class="st-label">Intake</span></li>
+            <li id="f-s2"><span class="st-dot">2</span><span class="st-label">Extract</span></li>
+            <li id="f-s3"><span class="st-dot">3</span><span class="st-label">Ground</span></li>
+            <li id="f-s4"><span class="st-dot">4</span><span class="st-label">Submitted PoC</span></li>
+            <li id="f-s5"><span class="st-dot">5</span><span class="st-label">Reproduce</span></li>
+            <li id="f-s6"><span class="st-dot">6</span><span class="st-label">Control</span></li>
+            <li id="f-s7"><span class="st-dot">7</span><span class="st-label">Verdict</span></li>
+          </ol>
+          <section class="card" id="f-claims">
+            <h2>Extracted claims</h2>
+            <dl class="kv">
+              <dt>Package</dt><dd><code>sqlparse</code></dd>
+              <dt>Affected</dt><dd><code>0.4.4</code></dd>
+              <dt>Function</dt><dd><span class="f-strike"><code>sqlparse.utils.eval_expression</code><i id="f-strike"></i></span></dd>
+              <dt>Class</dt><dd>remote code execution</dd>
+              <dt>Claim</dt><dd>An unauthenticated remote attacker can execute arbitrary code on any server that formats user-supplied SQL.</dd>
+            </dl>
+          </section>
+          <section class="card" id="f-ground">
+            <h2>Grounding <span class="tag">deterministic, no model</span></h2>
+            <p class="g-bad">✗ `eval_expression` does not exist in sqlparse 0.4.4</p>
+            <p class="muted">Rejected before anything ran.</p>
+          </section>
+        </div>
+      </div>
+    </div>
+  </div>
+  <script>
+    (function () {
+      const scope = '[data-composition-id="fake"] ';
+      document.querySelectorAll(scope + "[data-split]").forEach(function (el) {
+        el.innerHTML = el.textContent.trim().split(" ").map(function (w, i, a) {
+          return '<span class="w">' + w + (i < a.length - 1 ? " " : "") + "</span>";
+        }).join("");
+      });
+      const tl = gsap.timeline({ paused: true });
+      const words = function (sel, at) {
+        tl.fromTo(sel + " .w", { opacity: 0, filter: "blur(6px)" }, { opacity: 1, filter: "blur(0px)", duration: 0.16, stagger: 0.07, ease: "power2.out" }, at);
+      };
+      const out = function (sel, at) {
+        tl.to(sel + " .w", { opacity: 0, filter: "blur(8px)", duration: 0.18, stagger: 0.03, ease: "power2.in" }, at);
+      };
+      const step = function (sel, cls, at, dot) {
+        tl.set(sel, { attr: { class: cls } }, at);
+        if (dot) tl.set(sel + " .st-dot", { textContent: dot }, at);
+      };
+      // whip in from the right
+      tl.fromTo("#f-panel-wrap", { x: 700, opacity: 0, filter: "blur(18px)" }, { x: 0, opacity: 1, filter: "blur(0px)", duration: 0.55, ease: "expo.out" }, 0);
+      tl.fromTo("#f-b-done", { opacity: 0 }, { opacity: 0, duration: 0.01 }, 0);
+      tl.fromTo(["#f-claims", "#f-ground"], { opacity: 0, y: 14 }, { opacity: 0, y: 14, duration: 0.01 }, 0);
+      words("#f-l1", 0.5); out("#f-l1", 2.85);
+      step("#f-s1", "st-done", 0.6, "✓");
+      step("#f-s2", "st-active", 0.8);
+      step("#f-s2", "st-done", 1.5, "✓");
+      tl.to("#f-claims", { opacity: 1, y: 0, duration: 0.4, ease: "expo.out" }, 1.5);
+      step("#f-s3", "st-active", 1.7);
+      step("#f-s3", "st-fail", 2.6, "✗");
+      tl.to("#f-ground", { opacity: 1, y: 0, duration: 0.4, ease: "expo.out" }, 2.6);
+      step("#f-s4", "st-skip", 3.0, "–");
+      step("#f-s5", "st-skip", 3.15, "–");
+      step("#f-s6", "st-skip", 3.3, "–");
+      words("#f-l2", 3.3);
+      tl.fromTo("#f-strike", { scaleX: 0 }, { scaleX: 1, duration: 0.4, ease: "power2.inOut" }, 3.6);
+      out("#f-l2", 6.35);
+      step("#f-s7", "st-done", 5.4, "✓");
+      tl.to("#f-b-run", { opacity: 0, duration: 0.15 }, 5.4);
+      tl.to("#f-b-done", { opacity: 1, duration: 0.15 }, 5.4);
+      words("#f-l3", 6.8);
+      out("#f-l3", 10.05);
+      tl.to("#f-panel-wrap", { x: -500, opacity: 0, filter: "blur(16px)", duration: 0.3, ease: "power3.in" }, 10.15);
+      window.__timelines["fake"] = tl;
+    })();
+  </script>
+</template>

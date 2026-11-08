@@ -1,0 +1,53 @@
+<template>
+  <style>
+    #root { position: absolute; inset: 0; background: #0b0d10; overflow: hidden; }
+    #i-line { position: absolute; left: 0; right: 0; top: 110px; text-align: center; font-size: 84px; color: #e7eaf0; }
+    #i-line em { font-style: normal; color: #3ddc97; }
+    #i-wrap { position: absolute; left: 200px; top: 300px; }
+    #i-ui { zoom: 1.6; width: 950px; display: flex; flex-direction: column; gap: 22px; }
+    #i-ui .stats { display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px; }
+    #i-ui .stat { background: #141821; border: 1px solid #222836; border-radius: 12px; padding: 12px 16px; }
+    #i-ui .s-ok b { color: #3ddc97; }
+    #i-ui .s-muted b { color: #8b93a7; }
+    #i-ui .s-danger b { color: #ff5c6c; }
+    #i-ui .inbox a { color: #e7eaf0; }
+  </style>
+  <div id="root" data-composition-id="inbox" data-width="1920" data-height="1080">
+    <div id="i-line" class="clip line" data-hold data-start="2.4" data-duration="5.1"><span class="w">Proof </span><span class="w">instead </span><span class="w">of </span><span class="w"><em>prose</em></span></div>
+    <div id="i-wrap">
+      <div id="i-ui">
+        <section class="stats">
+          <div class="stat"><b>3</b><span>reports triaged</span></div>
+          <div class="stat s-ok"><b>1</b><span>reproduced</span></div>
+          <div class="stat s-muted"><b>1</b><span>rejected</span></div>
+          <div class="stat s-danger"><b>1</b><span>hostile, contained</span></div>
+          <div class="stat"><b>4</b><span>sandboxes destroyed</span></div>
+        </section>
+        <section>
+          <div class="section-head">
+            <h2>Inbox</h2>
+            <p>Ranked for the reviewer: reproduced first, then hostile, inconclusive, rejected.</p>
+          </div>
+          <ul class="inbox">
+            <li id="i-r1"><a><span class="badge b-reproduced">Reproduced</span><span class="inbox-title">RecursionError DoS in sqlparse.parse on deeply nested brackets</span><span class="inbox-meta">95% · #1</span></a></li>
+            <li id="i-r2"><a><span class="badge b-hostile">Hostile</span><span class="inbox-title">sqlparse.format crashes on long IN lists with reindent=True</span><span class="inbox-meta">99% · #3</span></a></li>
+            <li id="i-r3"><a><span class="badge b-not_reproduced">Not reproduced</span><span class="inbox-title">Remote Code Execution in sqlparse via unsafe expression evaluation</span><span class="inbox-meta">92% · #2</span></a></li>
+          </ul>
+        </section>
+      </div>
+    </div>
+  </div>
+  <script>
+    (function () {
+      const tl = gsap.timeline({ paused: true });
+      tl.fromTo("#i-wrap", { opacity: 0, scale: 1.06, filter: "blur(10px)" }, { opacity: 1, scale: 1, filter: "blur(0px)", duration: 0.55, ease: "expo.out" }, 0);
+      ["#i-r1", "#i-r2", "#i-r3"].forEach(function (s, i) {
+        tl.fromTo(s, { opacity: 0, x: -30 }, { opacity: 1, x: 0, duration: 0.4, ease: "expo.out" }, 0.6 + i * 0.12);
+      });
+      tl.fromTo("#i-ui .stat", { opacity: 0, y: 12 }, { opacity: 1, y: 0, duration: 0.35, stagger: 0.06, ease: "expo.out" }, 1.2);
+      tl.fromTo("#i-line .w", { opacity: 0, filter: "blur(6px)" }, { opacity: 1, filter: "blur(0px)", duration: 0.16, stagger: 0.09, ease: "power2.out" }, 2.4);
+      tl.to(["#i-line", "#i-wrap"], { opacity: 0, filter: "blur(10px)", duration: 0.25, ease: "power2.in" }, 7.2);
+      window.__timelines["inbox"] = tl;
+    })();
+  </script>
+</template>

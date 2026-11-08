@@ -1,0 +1,33 @@
+<template>
+  <style>
+    #root { position: absolute; inset: 0; background: #0b0d10; overflow: hidden; }
+    .m-lock { position: absolute; left: 0; right: 0; top: 250px; display: flex; justify-content: center; align-items: center; gap: 34px; }
+    .m-lock svg { width: 150px; height: 150px; }
+    .m-word { font: 700 140px/1 "Inter Tight", sans-serif; letter-spacing: -0.045em; color: #e7eaf0; }
+    .m-word span { display: inline-block; }
+    #m-line { position: absolute; left: 0; right: 0; top: 560px; text-align: center; font-size: 70px; color: #e7eaf0; }
+    #m-line em { font-style: normal; color: #3ddc97; }
+  </style>
+  <div id="root" data-composition-id="mark" data-width="1920" data-height="1080">
+    <div class="m-lock">
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <path id="m-shield" pathLength="100" d="M12 2 3 6v6c0 5 3.8 9.4 9 10 5.2-.6 9-5 9-10V6l-9-4Z" fill="none" stroke="#e7eaf0" stroke-width="1.6" stroke-linejoin="round" />
+        <path id="m-check" pathLength="100" d="m8 12 3 3 5-6" fill="none" stroke="#3ddc97" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" />
+      </svg>
+      <div class="m-word" id="m-word"><span>T</span><span>r</span><span>i</span><span>a</span><span>g</span><span>e</span></div>
+    </div>
+    <div id="m-line" class="clip line" data-hold data-start="2.5" data-duration="4.4"><span class="w">Every </span><span class="w">report </span><span class="w">reproduced </span><span class="w">or </span><span class="w">rejected</span><br><span class="w"><em>before</em> </span><span class="w">a </span><span class="w">human </span><span class="w">reads </span><span class="w">it</span></div>
+  </div>
+  <script>
+    (function () {
+      const tl = gsap.timeline({ paused: true });
+      tl.fromTo("#m-shield", { strokeDasharray: "100 120", strokeDashoffset: 110 }, { strokeDashoffset: 0, duration: 0.9, ease: "power2.inOut" }, 0);
+      tl.fromTo("#m-check", { strokeDasharray: "100 120", strokeDashoffset: 110 }, { strokeDashoffset: 0, duration: 0.4, ease: "power3.out" }, 0.95);
+      tl.fromTo("#m-word span", { opacity: 0.0, filter: "blur(8px)" }, { opacity: 1, filter: "blur(0px)", duration: 0.2, stagger: 0.07, ease: "power2.out" }, 0.9);
+      tl.fromTo("#m-line .w", { opacity: 0, filter: "blur(6px)" }, { opacity: 1, filter: "blur(0px)", duration: 0.16, stagger: 0.07, ease: "power2.out" }, 2.5);
+      tl.to(["#m-line .w", "#m-word span"], { opacity: 0, filter: "blur(8px)", duration: 0.2, stagger: 0.015, ease: "power2.in" }, 6.55);
+      tl.to(["#m-shield", "#m-check"], { opacity: 0, duration: 0.2 }, 6.65);
+      window.__timelines["mark"] = tl;
+    })();
+  </script>
+</template>

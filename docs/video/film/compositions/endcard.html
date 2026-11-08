@@ -1,0 +1,36 @@
+<template>
+  <style>
+    #root { position: absolute; inset: 0; background: #07090c; overflow: hidden; }
+    #e-flood { position: absolute; inset: 0; background: var(--color-ok, #3ddc97); }
+    .e-lock { position: absolute; left: 0; right: 0; top: 330px; display: flex; justify-content: center; align-items: center; gap: 30px; }
+    .e-lock svg { width: 140px; height: 140px; }
+    .e-word { font: 700 150px/1 "Inter Tight", sans-serif; letter-spacing: -0.045em; color: #04130c; }
+    #e-word { clip-path: inset(0 100% 0 0); }
+    #e-url { position: absolute; left: 0; right: 0; top: 580px; text-align: center; font: 600 44px "JetBrains Mono", monospace; color: #04130c; }
+    #e-event { position: absolute; left: 0; right: 0; top: 670px; text-align: center; font: 500 30px "Inter Tight", sans-serif; color: #0b3a26; letter-spacing: 0.01em; }
+  </style>
+  <div id="root" data-composition-id="endcard" data-width="1920" data-height="1080">
+    <div id="e-flood"></div>
+    <div class="e-lock">
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <path id="e-shield" pathLength="100" d="M12 2 3 6v6c0 5 3.8 9.4 9 10 5.2-.6 9-5 9-10V6l-9-4Z" fill="none" stroke="#04130c" stroke-width="1.7" stroke-linejoin="round" />
+        <path id="e-check" pathLength="100" d="m8 12 3 3 5-6" fill="none" stroke="#04130c" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" />
+      </svg>
+      <div class="e-word" id="e-word">Triage</div>
+    </div>
+    <div id="e-url" class="clip" data-start="2.1" data-duration="5.9" data-var-text="repo-url">github.com/Abrar5510/triage</div>
+    <div id="e-event" class="clip" data-start="2.6" data-duration="5.4">Vultr Agent Rush · Challenge 1: Blast Radius Zero</div>
+  </div>
+  <script>
+    (function () {
+      const tl = gsap.timeline({ paused: true });
+      tl.fromTo("#e-flood", { clipPath: "inset(100% 0 0 0)" }, { clipPath: "inset(0% 0 0 0)", duration: 0.55, ease: "power2.inOut" }, 0);
+      tl.fromTo("#e-shield", { strokeDasharray: "100 120", strokeDashoffset: 110 }, { strokeDashoffset: 0, duration: 0.8, ease: "power2.inOut" }, 0.5);
+      tl.fromTo("#e-check", { strokeDasharray: "100 120", strokeDashoffset: 110 }, { strokeDashoffset: 0, duration: 0.35, ease: "power3.out" }, 1.15);
+      tl.fromTo("#e-word", { clipPath: "inset(0 100% 0 0)" }, { clipPath: "inset(0 0% 0 0)", duration: 0.5, ease: "power3.out" }, 1.25);
+      tl.fromTo("#e-url", { opacity: 0, filter: "blur(6px)" }, { opacity: 1, filter: "blur(0px)", duration: 0.25 }, 2.1);
+      tl.fromTo("#e-event", { opacity: 0, filter: "blur(6px)" }, { opacity: 1, filter: "blur(0px)", duration: 0.25 }, 2.6);
+      window.__timelines["endcard"] = tl;
+    })();
+  </script>
+</template>
