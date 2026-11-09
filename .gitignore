@@ -7,9 +7,3 @@
 .venv/
 __pycache__/
 cache/
-docs/deck/slide-*.png
-docs/video/raw/
-docs/video/*.mp4
-docs/video/*.webm
-docs/video/film/.hyperframes/
-docs/video/film/renders/
